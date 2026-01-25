@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Calendar, MapPin, Plus, Trash2, Clock, DollarSign, 
   ChevronLeft, Sun, Moon, Briefcase, Coffee, Camera, 
-  ArrowRight, Layout, CheckCircle, Menu, X, PieChart, List, Users, User, Edit, Image as ImageIcon, Upload, AlertTriangle
+  ArrowRight, Layout, CheckCircle, Menu, X, PieChart, List, Users, User, Edit, Image as ImageIcon, Upload, AlertTriangle, Map
 } from 'lucide-react';
+import TripMap from './components/TripMap';
 
 // --- Utility Functions ---
 const formatDate = (dateString) => {
@@ -703,6 +704,12 @@ export default function App() {
                  <Calendar size={18} /> 行程規劃
                </button>
                <button 
+                  onClick={() => { setSubView('map'); setIsSidebarOpen(false); }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors font-medium ${subView === 'map' ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}
+               >
+                 <Map size={18} /> 地圖檢視
+               </button>
+               <button 
                   onClick={() => { setSubView('budget'); setIsSidebarOpen(false); }}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors font-medium ${subView === 'budget' ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}
                >
@@ -927,6 +934,13 @@ export default function App() {
                     ))
                   )}
                 </div>
+              </div>
+            ) : subView === 'map' ? (
+              <div className="h-full min-h-[500px]">
+                <TripMap 
+                  activities={activities} 
+                  destination={currentTrip?.destination} 
+                />
               </div>
             ) : (
               // Budget View

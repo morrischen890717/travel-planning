@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import tripsRouter from './routes/trips.js';
 import activitiesRouter from './routes/activities.js';
+import mapsRouter from './routes/maps.js';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ mongoose.connect(MONGODB_URI)
 // Routes
 app.use('/api/trips', tripsRouter);
 app.use('/api/activities', activitiesRouter);
+app.use('/api/maps', mapsRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
