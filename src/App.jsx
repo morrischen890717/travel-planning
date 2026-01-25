@@ -118,9 +118,11 @@ export default function App() {
   
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [newActivity, setNewActivity] = useState({ title: '', time: '', location: '', cost: '', type: 'sightseeing', notes: '', splitBy: [], dayIndex: 0 });
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(-2);
   const [formError, setFormError] = useState('');
   const [tripToDelete, setTripToDelete] = useState(null);
+  const [editingActivity, setEditingActivity] = useState(null);
+  const [activityToDelete, setActivityToDelete] = useState(null);
 
   // Persist trips to localStorage
   useEffect(() => {
@@ -279,6 +281,7 @@ export default function App() {
       ? [...currentTrip.participants] 
       : [];
       
+    setEditingActivity(null);
     setNewActivity({ 
       title: '', 
       time: '', 
@@ -316,11 +319,44 @@ export default function App() {
     setActivities(activities.filter(a => a.id !== actId));
   };
 
+  const openEditActivity = (activity) => {
+    setEditingActivity(activity);
+    setNewActivity({
+      title: activity.title,
+      time: activity.time || '',
+      location: activity.location || '',
+      cost: activity.cost || '',
+      type: activity.type || 'sightseeing',
+      notes: activity.notes || '',
+      splitBy: activity.splitBy || [],
+      dayIndex: activity.dayIndex
+    });
+    setFormError('');
+    setIsActivityModalOpen(true);
+  };
+
+  const handleUpdateActivity = () => {
+    setFormError('');
+    if (!newActivity.title) {
+      setFormError('請填寫名稱');
+      return;
+    }
+
+    setActivities(activities.map(act => 
+      act.id === editingActivity.id 
+        ? { ...act, ...newActivity, cost: parseFloat(newActivity.cost) || 0 }
+        : act
+    ));
+    setIsActivityModalOpen(false);
+    setEditingActivity(null);
+    setFormError('');
+  };
+
   const openTrip = (trip) => {
     setCurrentTrip(trip);
     setView('tripDetail');
     setSubView('itinerary');
-    setSelectedDayIndex(0);
+    setSelectedDayIndex(-2);
     setIsSidebarOpen(false);
   };
 
@@ -755,7 +791,10 @@ export default function App() {
                       <div key={act.id} className="relative group">
                         <div className="absolute -left-[31px] top-4 w-4 h-4 rounded-full bg-white border-4 border-teal-500"></div>
                         
-                        <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div 
+                          onClick={() => openEditActivity(act)}
+                          className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-teal-200"
+                        >
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-2 flex-wrap">
                               {/* Show day indicator in "all activities" view */}
@@ -778,8 +817,9 @@ export default function App() {
                               </span>
                             </div>
                             <button 
-                              onClick={() => handleDeleteActivity(act.id)}
-                              className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                              onClick={(e) => { e.stopPropagation(); setActivityToDelete(act); }}
+                              className="text-slate-400 hover:text-red-500 transition-colors p-1 md:opacity-0 md:group-hover:opacity-100"
+                              title="刪除行程"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -935,7 +975,9 @@ export default function App() {
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 animate-in max-h-[90vh] overflow-y-auto">
         <h3 className="text-xl font-bold text-slate-800 mb-4">
-            {subView === 'budget' ? '新增支出' : '新增行程'}
+            {editingActivity 
+              ? (subView === 'budget' ? '編輯支出' : '編輯行程')
+              : (subView === 'budget' ? '新增支出' : '新增行程')}
         </h3>
         <div className="space-y-3">
           <div>
@@ -1081,13 +1123,13 @@ export default function App() {
 
         <div className="mt-6 flex justify-end gap-3">
           <button 
-            onClick={() => setIsActivityModalOpen(false)}
+            onClick={() => { setIsActivityModalOpen(false); setEditingActivity(null); }}
             className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
           >
             取消
           </button>
           <button 
-            onClick={handleAddActivity}
+            onClick={editingActivity ? handleUpdateActivity : handleAddActivity}
             className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm"
           >
             儲存
@@ -1118,6 +1160,36 @@ export default function App() {
           </button>
           <button 
             onClick={confirmDeleteTrip}
+            className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium shadow-sm shadow-red-200 transition-colors"
+          >
+            確認刪除
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderActivityDeleteConfirmation = () => (
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 animate-in">
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4 shadow-sm">
+            <AlertTriangle size={24} />
+          </div>
+          <h3 className="text-xl font-bold text-slate-800">確定要刪除此行程嗎？</h3>
+          <p className="text-slate-500 mt-2 text-sm leading-relaxed">
+            您即將刪除「<span className="font-bold text-slate-700">{activityToDelete?.title}</span>」。<br/>此動作無法復原。
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <button 
+            onClick={() => setActivityToDelete(null)}
+            className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
+          >
+            取消
+          </button>
+          <button 
+            onClick={() => { handleDeleteActivity(activityToDelete.id); setActivityToDelete(null); }}
             className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium shadow-sm shadow-red-200 transition-colors"
           >
             確認刪除
@@ -1293,6 +1365,7 @@ export default function App() {
       {isModalOpen && renderTripModal()}
       {isActivityModalOpen && renderActivityModal()}
       {tripToDelete && renderDeleteConfirmation()}
+      {activityToDelete && renderActivityDeleteConfirmation()}
     </div>
   );
 }
