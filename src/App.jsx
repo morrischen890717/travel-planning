@@ -97,16 +97,17 @@ const getTypeLabel = (type) => {
 };
 
 // --- Main Component ---
+// API Base URL
+const API_URL = 'http://localhost:3001/api';
+
 export default function App() {
   const [view, setView] = useState('dashboard');
   const [subView, setSubView] = useState('itinerary');
-  const [trips, setTrips] = useState(() => {
-    const saved = localStorage.getItem('travel_trips');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [trips, setTrips] = useState([]);
   const [currentTrip, setCurrentTrip] = useState(null);
   const [activities, setActivities] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Form States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -124,27 +125,45 @@ export default function App() {
   const [editingActivity, setEditingActivity] = useState(null);
   const [activityToDelete, setActivityToDelete] = useState(null);
 
-  // Persist trips to localStorage
+  // Fetch trips from API on mount
   useEffect(() => {
-    localStorage.setItem('travel_trips', JSON.stringify(trips));
-  }, [trips]);
+    const fetchTrips = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`${API_URL}/trips`);
+        const data = await response.json();
+        // Map MongoDB _id to id for compatibility
+        const mappedTrips = data.map(trip => ({ ...trip, id: trip._id }));
+        setTrips(mappedTrips);
+      } catch (error) {
+        console.error('Failed to fetch trips:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTrips();
+  }, []);
 
-  // Load activities for current trip
+  // Fetch activities for current trip from API
   useEffect(() => {
-    if (currentTrip) {
-      const saved = localStorage.getItem(`activities_${currentTrip.id}`);
-      setActivities(saved ? JSON.parse(saved) : []);
-    } else {
-      setActivities([]);
-    }
+    const fetchActivities = async () => {
+      if (currentTrip) {
+        try {
+          const response = await fetch(`${API_URL}/activities?tripId=${currentTrip.id}`);
+          const data = await response.json();
+          // Map MongoDB _id to id for compatibility
+          const mappedActivities = data.map(act => ({ ...act, id: act._id }));
+          setActivities(mappedActivities);
+        } catch (error) {
+          console.error('Failed to fetch activities:', error);
+          setActivities([]);
+        }
+      } else {
+        setActivities([]);
+      }
+    };
+    fetchActivities();
   }, [currentTrip]);
-
-  // Persist activities
-  useEffect(() => {
-    if (currentTrip) {
-      localStorage.setItem(`activities_${currentTrip.id}`, JSON.stringify(activities));
-    }
-  }, [activities, currentTrip]);
 
   // Sync currentTrip with trips
   useEffect(() => {
@@ -193,20 +212,39 @@ export default function App() {
       coverImage: newTrip.coverImage || ''
     };
 
-    if (isEditing && currentTrip) {
-      const updatedTrips = trips.map(t => t.id === currentTrip.id ? { ...t, ...tripData } : t);
-      setTrips(updatedTrips);
-      setCurrentTrip({ ...currentTrip, ...tripData }); 
-    } else {
-      const trip = { id: Date.now().toString(), ...tripData };
-      setTrips([...trips, trip]);
-    }
+    try {
+      if (isEditing && currentTrip) {
+        // Update existing trip
+        const response = await fetch(`${API_URL}/trips/${currentTrip.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tripData)
+        });
+        const updatedTrip = await response.json();
+        const mappedTrip = { ...updatedTrip, id: updatedTrip._id };
+        setTrips(trips.map(t => t.id === currentTrip.id ? mappedTrip : t));
+        setCurrentTrip(mappedTrip);
+      } else {
+        // Create new trip
+        const response = await fetch(`${API_URL}/trips`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tripData)
+        });
+        const savedTrip = await response.json();
+        const mappedTrip = { ...savedTrip, id: savedTrip._id };
+        setTrips([...trips, mappedTrip]);
+      }
 
-    setNewTrip({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '' });
-    setParticipantInput('');
-    setIsModalOpen(false);
-    setFormError('');
-    setIsEditing(false);
+      setNewTrip({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '' });
+      setParticipantInput('');
+      setIsModalOpen(false);
+      setFormError('');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to save trip:', error);
+      setFormError('儲存失敗，請重試');
+    }
   };
 
   const handleImageUpload = async (e) => {
@@ -265,15 +303,19 @@ export default function App() {
     if (!tripToDelete) return;
     const tripId = tripToDelete.id;
     
-    const updated = trips.filter(t => t.id !== tripId);
-    setTrips(updated);
-    localStorage.removeItem(`activities_${tripId}`);
-    
-    if (currentTrip?.id === tripId) {
-      setView('dashboard');
-      setCurrentTrip(null);
+    try {
+      await fetch(`${API_URL}/trips/${tripId}`, { method: 'DELETE' });
+      const updated = trips.filter(t => t.id !== tripId);
+      setTrips(updated);
+      
+      if (currentTrip?.id === tripId) {
+        setView('dashboard');
+        setCurrentTrip(null);
+      }
+      setTripToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete trip:', error);
     }
-    setTripToDelete(null);
   };
 
   const openActivityModal = () => {
@@ -304,19 +346,36 @@ export default function App() {
     }
     
     const activityData = {
-      id: Date.now().toString(),
+      tripId: currentTrip.id,
       ...newActivity,
       dayIndex: newActivity.dayIndex, 
       cost: parseFloat(newActivity.cost) || 0
     };
 
-    setActivities([...activities, activityData]);
-    setIsActivityModalOpen(false);
-    setFormError('');
+    try {
+      const response = await fetch(`${API_URL}/activities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(activityData)
+      });
+      const savedActivity = await response.json();
+      const mappedActivity = { ...savedActivity, id: savedActivity._id };
+      setActivities([...activities, mappedActivity]);
+      setIsActivityModalOpen(false);
+      setFormError('');
+    } catch (error) {
+      console.error('Failed to add activity:', error);
+      setFormError('新增失敗，請重試');
+    }
   };
 
   const handleDeleteActivity = async (actId) => {
-    setActivities(activities.filter(a => a.id !== actId));
+    try {
+      await fetch(`${API_URL}/activities/${actId}`, { method: 'DELETE' });
+      setActivities(activities.filter(a => a.id !== actId));
+    } catch (error) {
+      console.error('Failed to delete activity:', error);
+    }
   };
 
   const openEditActivity = (activity) => {
@@ -335,21 +394,31 @@ export default function App() {
     setIsActivityModalOpen(true);
   };
 
-  const handleUpdateActivity = () => {
+  const handleUpdateActivity = async () => {
     setFormError('');
     if (!newActivity.title) {
       setFormError('請填寫名稱');
       return;
     }
 
-    setActivities(activities.map(act => 
-      act.id === editingActivity.id 
-        ? { ...act, ...newActivity, cost: parseFloat(newActivity.cost) || 0 }
-        : act
-    ));
-    setIsActivityModalOpen(false);
-    setEditingActivity(null);
-    setFormError('');
+    try {
+      const response = await fetch(`${API_URL}/activities/${editingActivity.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newActivity, cost: parseFloat(newActivity.cost) || 0 })
+      });
+      const updatedActivity = await response.json();
+      const mappedActivity = { ...updatedActivity, id: updatedActivity._id };
+      setActivities(activities.map(act => 
+        act.id === editingActivity.id ? mappedActivity : act
+      ));
+      setIsActivityModalOpen(false);
+      setEditingActivity(null);
+      setFormError('');
+    } catch (error) {
+      console.error('Failed to update activity:', error);
+      setFormError('更新失敗，請重試');
+    }
   };
 
   const openTrip = (trip) => {
