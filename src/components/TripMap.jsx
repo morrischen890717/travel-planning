@@ -276,6 +276,9 @@ export default function TripMap({ activities, destination }) {
           </p>
           <p style="margin: 0; font-size: 12px; color: #888;">📍 ${location.location}</p>
           ${location.cost ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #14b8a6; font-weight: 500;">💰 $${location.cost.toLocaleString()}</p>` : ''}
+          <a href="https://www.google.com/maps/search/?api=1&query=${location.coords.lat},${location.coords.lng}" target="_blank" rel="noopener noreferrer" style="display: block; margin-top: 8px; font-size: 12px; color: #3b82f6; text-decoration: none;">
+            在 Google Maps 中開啟
+          </a>
         </div>
       `;
 
