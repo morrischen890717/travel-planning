@@ -154,12 +154,13 @@ const getMarkerColor = (type) => {
     food: '#F97316',        // orange
     transport: '#64748B',   // slate
     shopping: '#EC4899',    // pink
+    other: '#10B981',       // emerald
   };
   return colors[type] || '#14B8A6'; // teal default
 };
 
 const getTypeLabel = (type) => {
-  const map = { sightseeing: '觀光', food: '美食', transport: '交通', shopping: '購物' };
+  const map = { sightseeing: '觀光', food: '美食', transport: '交通', shopping: '購物', other: '其他' };
   return map[type] || '行程';
 };
 

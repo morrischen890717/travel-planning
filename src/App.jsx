@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Calendar, MapPin, Plus, Trash2, Clock, DollarSign, 
   ChevronLeft, Sun, Moon, Briefcase, Coffee, Camera, 
-  ArrowRight, Layout, CheckCircle, Menu, X, PieChart, List, Users, User, Edit, Image as ImageIcon, Upload, AlertTriangle, Map
+  ArrowRight, Layout, CheckCircle, Menu, X, PieChart, List, Users, User, Edit, Image as ImageIcon, Upload, AlertTriangle, Map, HelpCircle
 } from 'lucide-react';
 import TripMap from './components/TripMap';
 
@@ -78,6 +78,7 @@ const getTypeColor = (type) => {
     food: 'bg-orange-50 text-orange-600 border-orange-200',
     transport: 'bg-slate-100 text-slate-600 border-slate-200',
     shopping: 'bg-pink-50 text-pink-600 border-pink-200',
+    other: 'bg-emerald-50 text-emerald-600 border-emerald-200',
   };
   return map[type] || map.sightseeing;
 };
@@ -88,12 +89,13 @@ const getTypeColorDot = (type) => {
     food: 'bg-orange-500',
     transport: 'bg-slate-500',
     shopping: 'bg-pink-500',
+    other: 'bg-emerald-500',
   };
   return map[type] || 'bg-gray-400';
 };
 
 const getTypeLabel = (type) => {
-  const map = { sightseeing: '觀光', food: '美食', transport: '交通', shopping: '購物' };
+  const map = { sightseeing: '觀光', food: '美食', transport: '交通', shopping: '購物', other: '其他' };
   return map[type] || '行程';
 };
 
@@ -333,7 +335,8 @@ export default function App() {
       type: 'sightseeing', 
       notes: '',
       splitBy: defaultSplit,
-      dayIndex: subView === 'budget' ? -1 : (selectedDayIndex < 0 ? -1 : selectedDayIndex) 
+      dayIndex: subView === 'budget' ? -1 : (selectedDayIndex < 0 ? -1 : selectedDayIndex),
+      isExpenseOnly: subView === 'budget'
     });
     setFormError(''); 
     setIsActivityModalOpen(true);
@@ -350,7 +353,8 @@ export default function App() {
       tripId: currentTrip.id,
       ...newActivity,
       dayIndex: newActivity.dayIndex, 
-      cost: parseFloat(newActivity.cost) || 0
+      cost: parseFloat(newActivity.cost) || 0,
+      isExpenseOnly: newActivity.isExpenseOnly
     };
 
     try {
@@ -389,7 +393,8 @@ export default function App() {
       type: activity.type || 'sightseeing',
       notes: activity.notes || '',
       splitBy: activity.splitBy || [],
-      dayIndex: activity.dayIndex
+      dayIndex: activity.dayIndex,
+      isExpenseOnly: activity.isExpenseOnly || false
     });
     setFormError('');
     setIsActivityModalOpen(true);
@@ -437,9 +442,12 @@ export default function App() {
   }, [currentTrip]);
 
   const currentDayActivities = useMemo(() => {
+    // Filter out expenses from itinerary view
+    const itineraryActivities = activities.filter(a => !a.isExpenseOnly);
+    
     // -2 means show all activities
     if (selectedDayIndex === -2) {
-      return [...activities].sort((a, b) => {
+      return [...itineraryActivities].sort((a, b) => {
         // Sort by dayIndex first, then by time
         if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
         if (a.time && b.time) return a.time.localeCompare(b.time);
@@ -448,7 +456,7 @@ export default function App() {
         return 0;
       });
     }
-    return activities.filter(a => a.dayIndex === selectedDayIndex).sort((a, b) => {
+    return itineraryActivities.filter(a => a.dayIndex === selectedDayIndex).sort((a, b) => {
       if (a.time && b.time) return a.time.localeCompare(b.time);
       if (a.time) return -1;
       if (b.time) return 1;
@@ -461,7 +469,7 @@ export default function App() {
   }, [activities]);
 
   const costByCategory = useMemo(() => {
-    const stats = { sightseeing: 0, food: 0, transport: 0, shopping: 0 };
+    const stats = { sightseeing: 0, food: 0, transport: 0, shopping: 0, other: 0 };
     activities.forEach(act => {
       if (stats[act.type] !== undefined) {
         stats[act.type] += (act.cost || 0);
@@ -806,7 +814,7 @@ export default function App() {
               <div className="flex-1 overflow-y-auto p-4">
                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">分類概況</h3>
                  <div className="space-y-3 px-2">
-                   {['sightseeing', 'food', 'transport', 'shopping'].map(type => (
+                   {['sightseeing', 'food', 'transport', 'shopping', 'other'].map(type => (
                      <div key={type} className="flex justify-between items-center text-sm">
                         <div className="flex items-center gap-2 text-slate-600">
                           <span className={`w-2 h-2 rounded-full ${getTypeColorDot(type)}`}></span>
@@ -975,6 +983,7 @@ export default function App() {
                          {id: 'food', label: '美食', color: 'bg-orange-500'},
                          {id: 'transport', label: '交通', color: 'bg-slate-500'},
                          {id: 'shopping', label: '購物', color: 'bg-pink-500'},
+                         {id: 'other', label: '其他', color: 'bg-emerald-500'},
                        ].map(type => {
                           const cost = costByCategory[type.id];
                           const percent = totalCost > 0 ? (cost / totalCost) * 100 : 0;
@@ -1012,6 +1021,7 @@ export default function App() {
                                         {act.type === 'sightseeing' && <Camera size={18} />}
                                         {act.type === 'shopping' && <Briefcase size={18} />}
                                         {act.type === 'transport' && <ArrowRight size={18} />}
+                                        {act.type === 'other' && <HelpCircle size={18} />}
                                      </div>
                                      <div>
                                         <p className="font-bold text-slate-800">{act.title}</p>
@@ -1083,7 +1093,9 @@ export default function App() {
 
           <div className="grid grid-cols-3 gap-3">
              <div className="col-span-3">
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">行程/支出名稱</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                    {subView === 'budget' ? '支出名稱' : '行程名稱'}
+                </label>
                 <input 
                   type="text" 
                   value={newActivity.title}
@@ -1115,6 +1127,7 @@ export default function App() {
                 {id: 'food', label: '美食', icon: Coffee},
                 {id: 'transport', label: '交通', icon: ArrowRight},
                 {id: 'shopping', label: '購物', icon: Briefcase},
+                {id: 'other', label: '其他', icon: HelpCircle},
               ].map(type => (
                 <button
                   key={type.id}

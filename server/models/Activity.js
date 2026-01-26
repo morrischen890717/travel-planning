@@ -25,7 +25,7 @@ const activitySchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['sightseeing', 'food', 'transport', 'shopping'],
+    enum: ['sightseeing', 'food', 'transport', 'shopping', 'other'],
     default: 'sightseeing'
   },
   notes: {
@@ -39,6 +39,10 @@ const activitySchema = new mongoose.Schema({
   dayIndex: {
     type: Number,
     default: -1
+  },
+  isExpenseOnly: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
