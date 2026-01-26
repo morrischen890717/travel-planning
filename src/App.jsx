@@ -233,6 +233,11 @@ export default function App() {
 
     try {
       if (isEditing && currentTrip) {
+        // Find removed participants
+        const oldParticipants = currentTrip.participants || [];
+        const newParticipants = newTrip.participants || [];
+        const removedParticipants = oldParticipants.filter(p => !newParticipants.includes(p));
+
         // Update existing trip
         const response = await fetch(`${API_URL}/trips/${currentTrip.id}`, {
           method: 'PUT',
@@ -243,6 +248,29 @@ export default function App() {
         const mappedTrip = { ...updatedTrip, id: updatedTrip._id };
         setTrips(trips.map(t => t.id === currentTrip.id ? mappedTrip : t));
         setCurrentTrip(mappedTrip);
+
+        // Update activities to remove removed participants from splitBy
+        if (removedParticipants.length > 0) {
+          const updatePromises = activities
+            .filter(act => act.splitBy && act.splitBy.some(p => removedParticipants.includes(p)))
+            .map(async (act) => {
+              const newSplitBy = act.splitBy.filter(p => !removedParticipants.includes(p));
+              const actResponse = await fetch(`${API_URL}/activities/${act.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...act, splitBy: newSplitBy })
+              });
+              return actResponse.json();
+            });
+          
+          await Promise.all(updatePromises);
+          
+          // Refresh activities
+          const activitiesResponse = await fetch(`${API_URL}/activities?tripId=${currentTrip.id}`);
+          const activitiesData = await activitiesResponse.json();
+          const mappedActivities = activitiesData.map(act => ({ ...act, id: act._id }));
+          setActivities(mappedActivities);
+        }
       } else {
         // Create new trip
         const response = await fetch(`${API_URL}/trips`, {
