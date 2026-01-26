@@ -28,6 +28,11 @@ const activitySchema = new mongoose.Schema({
     enum: ['sightseeing', 'food', 'transport', 'shopping', 'other'],
     default: 'sightseeing'
   },
+  currency: {
+    type: String,
+    enum: ['TWD', 'JPY', 'USD', 'EUR', 'CNY', 'KRW', 'GBP', 'THB', 'VND', 'HKD'],
+    default: 'TWD'
+  },
   notes: {
     type: String,
     default: ''

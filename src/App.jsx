@@ -99,6 +99,22 @@ const getTypeLabel = (type) => {
   return map[type] || '行程';
 };
 
+const getCurrencySymbol = (currency) => {
+  const symbols = {
+    TWD: 'NT$',
+    JPY: '¥',
+    USD: '$',
+    EUR: '€',
+    CNY: '¥',
+    KRW: '₩',
+    GBP: '£',
+    THB: '฿',
+    VND: '₫',
+    HKD: 'HK$'
+  };
+  return symbols[currency] || '$';
+};
+
 // --- Main Component ---
 // API Base URL
 const API_URL = 'http://localhost:3001/api';
@@ -123,12 +139,13 @@ export default function App() {
   const fileInputRef = useRef(null);
   
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
-  const [newActivity, setNewActivity] = useState({ title: '', time: '', location: '', cost: '', type: 'sightseeing', notes: '', splitBy: [], dayIndex: 0 });
+  const [newActivity, setNewActivity] = useState({ title: '', time: '', location: '', cost: '', currency: 'TWD', type: 'sightseeing', notes: '', splitBy: [], dayIndex: 0 });
   const [selectedDayIndex, setSelectedDayIndex] = useState(-2);
   const [formError, setFormError] = useState('');
   const [tripToDelete, setTripToDelete] = useState(null);
   const [editingActivity, setEditingActivity] = useState(null);
   const [activityToDelete, setActivityToDelete] = useState(null);
+  const [selectedCurrencyFilter, setSelectedCurrencyFilter] = useState('TWD');
 
   // Fetch trips from API on mount
   useEffect(() => {
@@ -427,6 +444,7 @@ export default function App() {
       time: '', 
       location: '', 
       cost: '', 
+      currency: 'TWD',
       type: 'sightseeing', 
       notes: '',
       splitBy: defaultSplit,
@@ -485,6 +503,7 @@ export default function App() {
       time: activity.time || '',
       location: activity.location || '',
       cost: activity.cost || '',
+      currency: activity.currency || 'TWD',
       type: activity.type || 'sightseeing',
       notes: activity.notes || '',
       splitBy: activity.splitBy || [],
@@ -560,7 +579,15 @@ export default function App() {
   }, [activities, selectedDayIndex]);
 
   const totalCost = useMemo(() => {
-    return activities.reduce((sum, act) => sum + (act.cost || 0), 0);
+    const totals = {};
+    activities.forEach(act => {
+      const cost = act.cost || 0;
+      if (cost === 0) return;
+      const currency = act.currency || 'TWD';
+      if (!totals[currency]) totals[currency] = 0;
+      totals[currency] += cost;
+    });
+    return totals;
   }, [activities]);
 
   const itineraryCount = useMemo(() => {
@@ -568,24 +595,45 @@ export default function App() {
   }, [activities]);
 
   const costByCategory = useMemo(() => {
-    const stats = { sightseeing: 0, food: 0, transport: 0, shopping: 0, other: 0 };
+    // Structure: { currency: { type: amount } }
+    const stats = {};
     activities.forEach(act => {
-      if (stats[act.type] !== undefined) {
-        stats[act.type] += (act.cost || 0);
+      const currency = act.currency || 'TWD';
+      const cost = act.cost || 0;
+      if (cost === 0) return;
+      
+      if (!stats[currency]) {
+        stats[currency] = { sightseeing: 0, food: 0, transport: 0, shopping: 0, other: 0 };
+      }
+      if (stats[currency][act.type] !== undefined) {
+        stats[currency][act.type] += cost;
       }
     });
     return stats;
   }, [activities]);
 
+  const availableCurrencies = useMemo(() => {
+    const currencies = new Set();
+    activities.forEach(act => {
+      if (act.cost > 0) {
+        currencies.add(act.currency || 'TWD');
+      }
+    });
+    return Array.from(currencies).sort();
+  }, [activities]);
+
   const costByParticipant = useMemo(() => {
     if (!currentTrip?.participants) return {};
     
+    // Structure: { participant: { currency: amount } }
     const stats = {};
-    currentTrip.participants.forEach(p => stats[p] = 0);
+    currentTrip.participants.forEach(p => stats[p] = {});
 
     activities.forEach(act => {
       const cost = act.cost || 0;
       if (cost === 0) return;
+
+      const currency = act.currency || 'TWD';
 
       // 只有指定分帳成員的支出才計入
       const splitMembers = act.splitBy && act.splitBy.length > 0 
@@ -596,7 +644,10 @@ export default function App() {
         const perPerson = cost / splitMembers.length;
         splitMembers.forEach(member => {
           if (stats[member] !== undefined) {
-            stats[member] += perPerson;
+            if (!stats[member][currency]) {
+              stats[member][currency] = 0;
+            }
+            stats[member][currency] += perPerson;
           }
         });
       }
@@ -939,32 +990,63 @@ export default function App() {
             
             {subView === 'budget' && (
               <div className="flex-1 overflow-y-auto p-4">
-                 <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">分類概況</h3>
+                 <div className="flex justify-between items-center mb-3 px-2">
+                   <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">分類概況</h3>
+                   <select
+                     value={selectedCurrencyFilter}
+                     onChange={e => setSelectedCurrencyFilter(e.target.value)}
+                     className="text-xs border border-slate-200 rounded px-2 py-1 bg-white text-slate-600"
+                   >
+                     {availableCurrencies.length > 0 ? (
+                       availableCurrencies.map(c => <option key={c} value={c}>{c}</option>)
+                     ) : (
+                       <option value="TWD">TWD</option>
+                     )}
+                   </select>
+                 </div>
                  <div className="space-y-3 px-2">
-                   {['sightseeing', 'food', 'transport', 'shopping', 'other'].map(type => (
-                     <div key={type} className="flex justify-between items-center text-sm">
-                        <div className="flex items-center gap-2 text-slate-600">
-                          <span className={`w-2 h-2 rounded-full ${getTypeColorDot(type)}`}></span>
-                          {getTypeLabel(type)}
-                        </div>
-                        <span className="font-medium text-slate-800">${costByCategory[type].toLocaleString()}</span>
-                     </div>
-                   ))}
+                   {['sightseeing', 'food', 'transport', 'shopping', 'other'].map(type => {
+                     const amount = costByCategory[selectedCurrencyFilter]?.[type] || 0;
+                     return (
+                       <div key={type} className="flex justify-between items-center text-sm">
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <span className={`w-2 h-2 rounded-full ${getTypeColorDot(type)}`}></span>
+                            {getTypeLabel(type)}
+                          </div>
+                          <span className="font-medium text-slate-800">${amount.toLocaleString()}</span>
+                       </div>
+                     );
+                   })}
                  </div>
 
                  <div className="border-t border-slate-100 my-4"></div>
                  
                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">分帳概況</h3>
                  <div className="space-y-3 px-2">
-                   {currentTrip.participants && currentTrip.participants.map(p => (
-                     <div key={p} className="flex justify-between items-center text-sm">
-                        <div className="flex items-center gap-2 text-slate-600">
-                          <User size={14} className="text-slate-400" />
-                          {p}
-                        </div>
-                        <span className="font-medium text-slate-800">${(costByParticipant[p] || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                     </div>
-                   ))}
+                   {currentTrip.participants && currentTrip.participants.map(p => {
+                     const currencies = costByParticipant[p] || {};
+                     const currencyEntries = Object.entries(currencies).filter(([_, amt]) => amt > 0);
+                     return (
+                       <div key={p} className="text-sm">
+                          <div className="flex items-center gap-2 text-slate-600 mb-1">
+                            <User size={14} className="text-slate-400" />
+                            {p}
+                          </div>
+                          {currencyEntries.length > 0 ? (
+                            <div className="ml-6 space-y-0.5">
+                              {currencyEntries.map(([currency, amount]) => (
+                                <div key={currency} className="flex justify-between text-xs">
+                                  <span className="text-slate-400">{currency}</span>
+                                  <span className="font-medium text-slate-800">${amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="ml-6 text-xs text-slate-400">$0</div>
+                          )}
+                       </div>
+                     );
+                   })}
                    {(!currentTrip.participants || currentTrip.participants.length === 0) && (
                      <div className="text-xs text-slate-400 italic px-2">無參加者資料</div>
                    )}
@@ -1140,7 +1222,18 @@ export default function App() {
                  {/* Overview Cards */}
                  <div className="bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
                     <p className="text-teal-100 text-sm font-medium mb-1">目前總花費</p>
-                    <h3 className="text-3xl sm:text-4xl font-bold">${totalCost.toLocaleString()}</h3>
+                    <div className="space-y-1">
+                      {Object.entries(totalCost).length > 0 ? (
+                        Object.entries(totalCost).map(([currency, amount]) => (
+                          <div key={currency} className="flex items-baseline gap-2">
+                            <span className="text-2xl sm:text-3xl font-bold">${amount.toLocaleString()}</span>
+                            <span className="text-teal-200 text-sm">{currency}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <h3 className="text-3xl sm:text-4xl font-bold">$0</h3>
+                      )}
+                    </div>
                     <div className="mt-4 flex gap-4 text-sm text-teal-50 bg-white/10 p-3 rounded-lg inline-flex">
                        <span>已記錄行程數: {activities.filter(a => a.cost > 0).length} 筆</span>
                     </div>
@@ -1148,7 +1241,20 @@ export default function App() {
 
                  {/* Category Bars */}
                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h3 className="font-bold text-slate-800 mb-4">花費分類</h3>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-bold text-slate-800">花費分類</h3>
+                      <select
+                        value={selectedCurrencyFilter}
+                        onChange={e => setSelectedCurrencyFilter(e.target.value)}
+                        className="text-sm border border-slate-200 rounded px-3 py-1.5 bg-white text-slate-600"
+                      >
+                        {availableCurrencies.length > 0 ? (
+                          availableCurrencies.map(c => <option key={c} value={c}>{c}</option>)
+                        ) : (
+                          <option value="TWD">TWD</option>
+                        )}
+                      </select>
+                    </div>
                     <div className="space-y-4">
                        {[
                          {id: 'sightseeing', label: '觀光', color: 'bg-blue-500'},
@@ -1157,8 +1263,9 @@ export default function App() {
                          {id: 'shopping', label: '購物', color: 'bg-pink-500'},
                          {id: 'other', label: '其他', color: 'bg-emerald-500'},
                        ].map(type => {
-                          const cost = costByCategory[type.id];
-                          const percent = totalCost > 0 ? (cost / totalCost) * 100 : 0;
+                          const cost = costByCategory[selectedCurrencyFilter]?.[type.id] || 0;
+                          const currencyTotal = Object.values(costByCategory[selectedCurrencyFilter] || {}).reduce((a, b) => a + b, 0);
+                          const percent = currencyTotal > 0 ? (cost / currencyTotal) * 100 : 0;
                           return (
                              <div key={type.id}>
                                 <div className="flex justify-between text-sm mb-1">
@@ -1333,15 +1440,33 @@ export default function App() {
 
           <div>
              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">金額 (選填)</label>
-             <div className="relative">
-                <DollarSign size={14} className="absolute left-3 top-2.5 text-slate-400" />
-                <input 
-                  type="number" 
-                  value={newActivity.cost}
-                  onChange={e => setNewActivity({...newActivity, cost: e.target.value})}
-                  className="w-full border border-slate-300 rounded-lg pl-8 pr-3 py-2 focus:ring-teal-500 outline-none text-sm"
-                  placeholder="0"
-                />
+             <div className="flex gap-2">
+                <div className="relative flex-1">
+                   <DollarSign size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                   <input 
+                     type="number" 
+                     value={newActivity.cost}
+                     onChange={e => setNewActivity({...newActivity, cost: e.target.value})}
+                     className="w-full border border-slate-300 rounded-lg pl-8 pr-3 py-2 focus:ring-teal-500 outline-none text-sm"
+                     placeholder="0"
+                   />
+                </div>
+                <select
+                   value={newActivity.currency || 'TWD'}
+                   onChange={e => setNewActivity({...newActivity, currency: e.target.value})}
+                   className="border border-slate-300 rounded-lg px-3 py-2 focus:ring-teal-500 outline-none bg-white text-sm w-24"
+                >
+                   <option value="TWD">TWD</option>
+                   <option value="JPY">JPY</option>
+                   <option value="USD">USD</option>
+                   <option value="EUR">EUR</option>
+                   <option value="CNY">CNY</option>
+                   <option value="KRW">KRW</option>
+                   <option value="GBP">GBP</option>
+                   <option value="THB">THB</option>
+                   <option value="VND">VND</option>
+                   <option value="HKD">HKD</option>
+                </select>
              </div>
           </div>
           
