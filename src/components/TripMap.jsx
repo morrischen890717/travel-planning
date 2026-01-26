@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { MapPin, Navigation, Loader } from 'lucide-react';
+import { t } from '../i18n';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -159,12 +160,7 @@ const getMarkerColor = (type) => {
   return colors[type] || '#14B8A6'; // teal default
 };
 
-const getTypeLabel = (type) => {
-  const map = { sightseeing: '觀光', food: '美食', transport: '交通', shopping: '購物', other: '其他' };
-  return map[type] || '行程';
-};
-
-export default function TripMap({ activities, destination }) {
+export default function TripMap({ activities, destination, language }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -172,6 +168,17 @@ export default function TripMap({ activities, destination }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [geocodedLocations, setGeocodedLocations] = useState([]);
+
+  const getTypeLabel = useCallback((type) => {
+    const keyMap = { 
+      sightseeing: 'categorySightseeing', 
+      food: 'categoryFood', 
+      transport: 'categoryTransport', 
+      shopping: 'categoryShopping', 
+      other: 'categoryOther' 
+    };
+    return t(keyMap[type] || 'categoryOther', language);
+  }, [language]);
 
   // Initialize map
   const initializeMap = useCallback(async () => {
@@ -227,10 +234,10 @@ export default function TripMap({ activities, destination }) {
       setIsLoading(false);
     } catch (err) {
       console.error('Map initialization error:', err);
-      setError('地圖載入失敗');
+      setError(t('mapError', language));
       setIsLoading(false);
     }
-  }, [activities, destination]);
+  }, [activities, destination, language, getTypeLabel]);
 
   // Add markers to map
   const addMarkers = useCallback((locations) => {
@@ -278,7 +285,7 @@ export default function TripMap({ activities, destination }) {
           <p style="margin: 0; font-size: 12px; color: #888;">📍 ${location.location}</p>
           ${location.cost ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #14b8a6; font-weight: 500;">💰 $${location.cost.toLocaleString()}</p>` : ''}
           <a href="https://www.google.com/maps/search/?api=1&query=${location.coords.lat},${location.coords.lng}" target="_blank" rel="noopener noreferrer" style="display: block; margin-top: 8px; font-size: 12px; color: #3b82f6; text-decoration: none;">
-            在 Google Maps 中開啟
+            ${t('openInGoogleMaps', language)}
           </a>
         </div>
       `;
@@ -299,7 +306,7 @@ export default function TripMap({ activities, destination }) {
       mapInstanceRef.current.setCenter(locations[0].coords);
       mapInstanceRef.current.setZoom(15);
     }
-  }, []);
+  }, [language, getTypeLabel]);
 
   // Initialize on mount and when activities change
   useEffect(() => {
@@ -338,7 +345,7 @@ export default function TripMap({ activities, destination }) {
           <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
             <div className="flex items-center gap-2 text-slate-600">
               <Loader className="animate-spin" size={20} />
-              <span>載入地圖中...</span>
+              <span>{t('mapLoading', language)}</span>
             </div>
           </div>
         )}
@@ -350,10 +357,10 @@ export default function TripMap({ activities, destination }) {
         <div className="p-4 border-b border-slate-100 bg-slate-50">
           <h3 className="font-semibold text-slate-700 flex items-center gap-2">
             <Navigation size={16} className="text-teal-500" />
-            地點列表
+            {t('locationList', language)}
           </h3>
           <p className="text-xs text-slate-500 mt-1">
-            共 {geocodedLocations.length} 個地點
+            {t('totalLocations', language).replace('{count}', geocodedLocations.length)}
           </p>
         </div>
         
@@ -361,8 +368,8 @@ export default function TripMap({ activities, destination }) {
           {geocodedLocations.length === 0 ? (
             <div className="p-6 text-center text-slate-400">
               <MapPin size={32} className="mx-auto mb-2" />
-              <p className="text-sm">尚無設定地點的行程</p>
-              <p className="text-xs mt-1">在活動中填寫地點即可顯示於地圖</p>
+              <p className="text-sm">{t('noLocations', language)}</p>
+              <p className="text-xs mt-1">{t('noLocationsHint', language)}</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-100">

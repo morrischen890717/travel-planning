@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Calendar, MapPin, Plus, Trash2, Clock, DollarSign, 
   ChevronLeft, Sun, Moon, Briefcase, Coffee, Camera, 
-  ArrowRight, Layout, CheckCircle, Menu, X, PieChart, List, Users, User, Edit, Image as ImageIcon, Upload, AlertTriangle, Map, HelpCircle
+  ArrowRight, Layout, CheckCircle, Menu, X, PieChart, List, Users, User, Edit, Image as ImageIcon, Upload, AlertTriangle, Map, HelpCircle, Globe
 } from 'lucide-react';
 import TripMap from './components/TripMap';
+import { translations, languageOptions, initLanguage } from './i18n';
 
 // --- Utility Functions ---
 const formatDate = (dateString) => {
@@ -146,6 +147,28 @@ export default function App() {
   const [editingActivity, setEditingActivity] = useState(null);
   const [activityToDelete, setActivityToDelete] = useState(null);
   const [selectedCurrencyFilter, setSelectedCurrencyFilter] = useState('TWD');
+  const [language, setLanguage] = useState(() => initLanguage());
+
+  // Translation helper
+  const t = (key) => translations[language]?.[key] || translations['zh-TW']?.[key] || key;
+
+  // Category label helper using translations
+  const getTypeLabelTranslated = (type) => {
+    const map = { 
+      sightseeing: t('categorySightseeing'), 
+      food: t('categoryFood'), 
+      transport: t('categoryTransport'), 
+      shopping: t('categoryShopping'), 
+      other: t('categoryOther') 
+    };
+    return map[type] || type;
+  };
+
+  // Handle language change
+  const handleLanguageChange = (lang) => {
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+  };
 
   // Fetch trips from API on mount
   useEffect(() => {
@@ -674,22 +697,42 @@ export default function App() {
               <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0">
                 <MapPin className="text-white" size={20} />
               </div>
-              <span>旅遊規劃大師</span>
+              <span>{t('appTitle')}</span>
             </h1>
-            <p className="text-slate-500 mt-2 ml-14">開始規劃您的下一場冒險</p>
+            <p className="text-slate-500 mt-2 ml-14">{t('appSubtitle')}</p>
           </div>
-          <button 
-            onClick={() => { 
-              setIsModalOpen(true); 
-              setIsEditing(false);
-              setFormError(''); 
-              setNewTrip({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '', announcement: '' });
-              setParticipantInput('');
-            }}
-            className="hidden sm:flex bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-xl items-center gap-2 shadow-lg shadow-teal-200/50 transition-all active:scale-95 font-medium flex-shrink-0"
-          >
-            <Plus size={20} /> 新增行程
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Language Switcher */}
+            {/* Language Switcher */}
+            <div className="relative bg-white border border-slate-200 rounded-lg group hover:border-teal-500 transition-colors">
+              <Globe size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-teal-500 transition-colors pointer-events-none" />
+              <select
+                value={language}
+                onChange={(e) => handleLanguageChange(e.target.value)}
+                className="bg-transparent text-sm text-slate-600 outline-none cursor-pointer pl-8 pr-3 py-1.5 w-full h-full rounded-lg appearance-none"
+              >
+                {languageOptions.map(opt => (
+                  <option key={opt.code} value={opt.code}>{opt.label}</option>
+                ))}
+              </select>
+              {/* Custom arrow for appearance-none */}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-slate-400"></div>
+              </div>
+            </div>
+            <button 
+              onClick={() => { 
+                setIsModalOpen(true); 
+                setIsEditing(false);
+                setFormError(''); 
+                setNewTrip({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '', announcement: '' });
+                setParticipantInput('');
+              }}
+              className="hidden sm:flex bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-xl items-center gap-2 shadow-lg shadow-teal-200/50 transition-all active:scale-95 font-medium flex-shrink-0"
+            >
+              <Plus size={20} /> {t('addTrip')}
+            </button>
+          </div>
         </div>
         
         {/* Mobile Add Button - Only shows on small screens */}
@@ -703,7 +746,7 @@ export default function App() {
           }}
           className="sm:hidden w-full bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-teal-200/50 transition-all active:scale-95 font-medium mb-6"
         >
-          <Plus size={20} /> 新增行程
+          <Plus size={20} /> {t('addTrip')}
         </button>
 
         {/* Trip Cards */}
@@ -712,8 +755,8 @@ export default function App() {
             <div className="bg-white p-5 rounded-2xl inline-block shadow-sm mb-4">
               <Layout size={48} className="text-slate-300" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-700">還沒有行程</h3>
-            <p className="text-slate-500 mt-2 mb-6">點擊上方按鈕建立您的第一個旅遊計畫</p>
+            <h3 className="text-xl font-semibold text-slate-700">{t('noTrips')}</h3>
+            <p className="text-slate-500 mt-2 mb-6">{t('noTripsHint')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -750,7 +793,7 @@ export default function App() {
                       <button 
                         onClick={(e) => requestDeleteTrip(e, trip)}
                         className="p-2.5 bg-black/40 hover:bg-red-500 text-white rounded-full backdrop-blur-sm transition-all shadow-lg"
-                        title="刪除行程"
+                        title={t('deleteTrip')}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -787,10 +830,10 @@ export default function App() {
                     {/* Footer */}
                     <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-100">
                       <span className="text-sm font-semibold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg">
-                        {tripDuration} 天
+                        {tripDuration} {t('days')}
                       </span>
                       <div className="text-teal-600 flex items-center gap-1 text-sm font-semibold group-hover:translate-x-1 transition-transform">
-                        查看詳情 <ArrowRight size={16} />
+                        {t('viewDetails')} <ArrowRight size={16} />
                       </div>
                     </div>
                   </div>
@@ -831,12 +874,14 @@ export default function App() {
             <button 
               onClick={() => setView('dashboard')}
               className="p-2 hover:bg-slate-100/80 rounded-full text-slate-600 transition-colors backdrop-blur-sm"
+              title={t('backToDashboard')}
             >
               <ChevronLeft size={24} />
             </button>
             <button 
               onClick={() => setIsSidebarOpen(true)}
               className="md:hidden p-2 hover:bg-slate-100/80 rounded-full text-slate-600 backdrop-blur-sm"
+              title={t('openMenu')}
             >
               <Menu size={24} />
             </button>
@@ -846,7 +891,7 @@ export default function App() {
                  <button 
                     onClick={handleEditTrip}
                     className="p-1.5 hover:bg-slate-100/80 rounded-full text-slate-400 hover:text-teal-600 transition-colors backdrop-blur-sm"
-                    title="編輯行程"
+                    title={t('editTrip')}
                  >
                     <Edit size={16} />
                  </button>
@@ -856,11 +901,32 @@ export default function App() {
                 {currentTrip.participants?.length > 0 && (
                    <>
                     <span>•</span>
-                    <span className="flex items-center gap-1"><Users size={10} /> {currentTrip.participants.length} 人</span>
+                    <span className="flex items-center gap-1"><Users size={10} /> {currentTrip.participants.length} {t('people')}</span>
                    </>
                 )}
               </div>
             </div>
+          </div>
+          
+          <div className="flex items-center gap-3 relative z-10">
+             {/* Language Switcher */}
+             {/* Language Switcher */}
+             <div className="relative bg-white/80 border border-slate-200 rounded-lg backdrop-blur-sm group hover:border-teal-500 transition-colors">
+               <Globe size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-teal-500 transition-colors pointer-events-none" />
+               <select
+                 value={language}
+                 onChange={(e) => handleLanguageChange(e.target.value)}
+                 className="bg-transparent text-sm text-slate-600 outline-none cursor-pointer pl-9 pr-7 py-2 w-full h-full rounded-lg appearance-none"
+               >
+                 {languageOptions.map(opt => (
+                   <option key={opt.code} value={opt.code}>{opt.label}</option>
+                 ))}
+               </select>
+               {/* Custom arrow */}
+               <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                 <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-slate-400"></div>
+               </div>
+             </div>
           </div>
         </header>
 
@@ -876,7 +942,7 @@ export default function App() {
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           `}>
             <div className="p-4 border-b border-slate-100 flex justify-between items-center md:hidden">
-              <h3 className="font-bold text-slate-700">選單</h3>
+              <h3 className="font-bold text-slate-700">{t('menu')}</h3>
               <button onClick={() => setIsSidebarOpen(false)} className="text-slate-400">
                 <X size={20} />
               </button>
@@ -887,19 +953,19 @@ export default function App() {
                   onClick={() => { setSubView('itinerary'); setIsSidebarOpen(false); }}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors font-medium ${subView === 'itinerary' ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}
                >
-                 <Calendar size={18} /> 行程規劃
+                  <Calendar size={18} /> {t('navItinerary')}
                </button>
                <button 
                   onClick={() => { setSubView('map'); setIsSidebarOpen(false); }}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors font-medium ${subView === 'map' ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}
                >
-                 <Map size={18} /> 地圖檢視
+                 <Map size={18} /> {t('navMap')}
                </button>
                <button 
                   onClick={() => { setSubView('budget'); setIsSidebarOpen(false); }}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors font-medium ${subView === 'budget' ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}
                >
-                 <DollarSign size={18} /> 旅費支出
+                 <DollarSign size={18} /> {t('navBudget')}
                </button>
             </div>
 
@@ -924,7 +990,7 @@ export default function App() {
                       ＊
                     </div>
                     <div className="flex-1 min-w-0">
-                       <div className="text-sm truncate font-medium">所有行程</div>
+                       <div className="text-sm truncate font-medium">{t('allActivities')}</div>
                     </div>
                     {itineraryCount > 0 && (
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
@@ -950,7 +1016,7 @@ export default function App() {
                       ?
                     </div>
                     <div className="flex-1 min-w-0">
-                       <div className="text-sm truncate font-medium">待安排</div>
+                       <div className="text-sm truncate font-medium">{t('unassignedActivities')}</div>
                     </div>
                     {activities.filter(a => a.dayIndex === -1 && !a.isExpenseOnly).length > 0 && (
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
@@ -991,7 +1057,7 @@ export default function App() {
             {subView === 'budget' && (
               <div className="flex-1 overflow-y-auto p-4">
                  <div className="flex justify-between items-center mb-3 px-2">
-                   <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">分類概況</h3>
+                   <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('categoryBreakdown')}</h3>
                    <select
                      value={selectedCurrencyFilter}
                      onChange={e => setSelectedCurrencyFilter(e.target.value)}
@@ -1011,7 +1077,7 @@ export default function App() {
                        <div key={type} className="flex justify-between items-center text-sm">
                           <div className="flex items-center gap-2 text-slate-600">
                             <span className={`w-2 h-2 rounded-full ${getTypeColorDot(type)}`}></span>
-                            {getTypeLabel(type)}
+                            {getTypeLabelTranslated(type)}
                           </div>
                           <span className="font-medium text-slate-800">${amount.toLocaleString()}</span>
                        </div>
@@ -1021,7 +1087,7 @@ export default function App() {
 
                  <div className="border-t border-slate-100 my-4"></div>
                  
-                 <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">分帳概況</h3>
+                 <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">{t('splitSummary')}</h3>
                  <div className="space-y-3 px-2">
                    {currentTrip.participants && currentTrip.participants.map(p => {
                      const currencies = costByParticipant[p] || {};
@@ -1048,7 +1114,7 @@ export default function App() {
                      );
                    })}
                    {(!currentTrip.participants || currentTrip.participants.length === 0) && (
-                     <div className="text-xs text-slate-400 italic px-2">無參加者資料</div>
+                     <div className="text-xs text-slate-400 italic px-2">{t('noParticipants')}</div>
                    )}
                  </div>
               </div>
@@ -1062,21 +1128,21 @@ export default function App() {
               <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 mb-6 flex items-start gap-3">
                 <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
                 <div className="flex-1">
-                  <h4 className="text-amber-800 font-bold text-sm mb-1">置頂公告</h4>
+                  <h4 className="text-amber-800 font-bold text-sm mb-1">{t('pinnedAnnouncement')}</h4>
                   <p className="text-amber-700 text-sm whitespace-pre-wrap">{currentTrip.announcement}</p>
                 </div>
                 <div className="flex gap-1">
                   <button 
                     onClick={handleEditAnnouncement}
                     className="p-1.5 text-amber-600 hover:bg-amber-100 rounded-full transition-colors"
-                    title="編輯公告"
+                    title={t('editAnnouncement')}
                   >
                     <Edit size={14} />
                   </button>
                   <button 
                     onClick={handleDeleteAnnouncement}
                     className="p-1.5 text-amber-600 hover:bg-red-100 hover:text-red-500 rounded-full transition-colors"
-                    title="刪除公告"
+                    title={t('deleteAnnouncement')}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -1089,21 +1155,21 @@ export default function App() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
                   <div>
                     <h2 className="text-2xl font-bold text-slate-800">
-                      {selectedDayIndex === -2 ? '所有行程' : selectedDayIndex === -1 ? '待安排' : `Day ${selectedDayIndex + 1}`}
+                      {selectedDayIndex === -2 ? t('allActivities') : selectedDayIndex === -1 ? t('unassignedActivities') : `Day ${selectedDayIndex + 1}`}
                     </h2>
                     <p className="text-slate-500">
                       {selectedDayIndex === -2 
-                        ? `共 ${itineraryCount} 個行程` 
+                        ? `${t('totalExpense')}: ${itineraryCount} ${t('items')}` 
                         : selectedDayIndex === -1 
-                          ? '尚未指定日期的行程' 
-                          : currentDate?.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+                          ? t('unassignedHint')
+                          : currentDate?.toLocaleDateString(language === 'en' ? 'en-US' : (language === 'ja' ? 'ja-JP' : 'zh-TW'), { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
                     </p>
                   </div>
                   <button 
                     onClick={openActivityModal}
                     className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition-colors"
                   >
-                    <Plus size={16} /> 新增行程
+                    <Plus size={16} /> {t('addActivity')}
                   </button>
                 </div>
 
@@ -1118,10 +1184,10 @@ export default function App() {
                       </div>
                       <p className="text-slate-500">
                         {selectedDayIndex === -2 
-                          ? '還沒有任何行程' 
+                          ? t('noActivities')
                           : selectedDayIndex === -1 
-                            ? '還沒有待安排的行程' 
-                            : '這一天還沒有安排行程，去探索吧！'}
+                            ? t('noActivities')
+                            : t('noActivitiesHint')}
                       </p>
                     </div>
                   ) : (
@@ -1142,7 +1208,7 @@ export default function App() {
                                     ? 'bg-amber-100 text-amber-700' 
                                     : 'bg-indigo-100 text-indigo-700'
                                 }`}>
-                                  {act.dayIndex === -1 ? '待安排' : `Day ${act.dayIndex + 1}`}
+                                  {act.dayIndex === -1 ? t('unassigned') : `Day ${act.dayIndex + 1}`}
                                 </span>
                               )}
                               {act.time && (
@@ -1151,13 +1217,13 @@ export default function App() {
                                 </span>
                               )}
                               <span className={`text-xs px-2 py-0.5 rounded-full border ${getTypeColor(act.type)}`}>
-                                {getTypeLabel(act.type)}
+                                {getTypeLabelTranslated(act.type)}
                               </span>
                             </div>
                             <button 
                               onClick={(e) => { e.stopPropagation(); setActivityToDelete(act); }}
                               className="text-slate-400 hover:text-red-500 transition-colors p-1 md:opacity-0 md:group-hover:opacity-100"
-                              title="刪除行程"
+                              title={t('delete')}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -1180,13 +1246,13 @@ export default function App() {
                           {act.cost > 0 && (
                             <div className="mt-3 pt-3 border-t border-slate-50 text-sm">
                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-slate-500 font-medium">費用</span>
+                                  <span className="text-slate-500 font-medium">{t('costLabel')}</span>
                                   <span className="text-teal-600 font-bold text-base">${act.cost}</span>
                                </div>
                                {act.splitBy && act.splitBy.length > 0 && (
                                  <div className="flex items-start gap-1 text-slate-400 text-xs mt-1">
                                     <Users size={12} className="mt-0.5" />
-                                    <span>分帳: {act.splitBy.join(', ')}</span>
+                                    <span>{t('splitLabel')}: {act.splitBy.join(', ')}</span>
                                  </div>
                                )}
                             </div>
@@ -1200,6 +1266,8 @@ export default function App() {
             ) : subView === 'map' ? (
               <div className="h-full min-h-[500px]">
                 <TripMap 
+                  key={language}
+                  language={language}
                   activities={activities} 
                   destination={currentTrip?.destination} 
                 />
@@ -1209,19 +1277,19 @@ export default function App() {
               <div className="max-w-3xl mx-auto space-y-6">
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                        <DollarSign className="text-teal-600" /> 旅費支出
+                        <DollarSign className="text-teal-600" /> {t('navBudget')}
                     </h2>
                     <button 
                         onClick={openActivityModal}
                         className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition-colors"
                     >
-                        <Plus size={16} /> 新增支出
+                        <Plus size={16} /> {t('addExpense')}
                     </button>
                  </div>
 
                  {/* Overview Cards */}
                  <div className="bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
-                    <p className="text-teal-100 text-sm font-medium mb-1">目前總花費</p>
+                    <p className="text-teal-100 text-sm font-medium mb-1">{t('totalExpense')}</p>
                     <div className="space-y-1">
                       {Object.entries(totalCost).length > 0 ? (
                         Object.entries(totalCost).map(([currency, amount]) => (
@@ -1235,14 +1303,14 @@ export default function App() {
                       )}
                     </div>
                     <div className="mt-4 flex gap-4 text-sm text-teal-50 bg-white/10 p-3 rounded-lg inline-flex">
-                       <span>已記錄行程數: {activities.filter(a => a.cost > 0).length} 筆</span>
+                       <span>{t('recordedExpenses')}: {activities.filter(a => a.cost > 0).length} {t('items')}</span>
                     </div>
                  </div>
 
                  {/* Category Bars */}
                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold text-slate-800">花費分類</h3>
+                      <h3 className="font-bold text-slate-800">{t('categoryChart')}</h3>
                       <select
                         value={selectedCurrencyFilter}
                         onChange={e => setSelectedCurrencyFilter(e.target.value)}
@@ -1283,10 +1351,10 @@ export default function App() {
 
                  {/* Expense List */}
                  <div>
-                    <h3 className="font-bold text-slate-800 mb-4">支出明細與分帳</h3>
+                    <h3 className="font-bold text-slate-800 mb-4">{t('expenseList')}</h3>
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                        {activities.filter(a => a.cost > 0).length === 0 ? (
-                          <div className="p-8 text-center text-slate-400">尚無支出紀錄</div>
+                          <div className="p-8 text-center text-slate-400">{t('noExpenses')}</div>
                        ) : (
                           activities
                            .filter(a => a.cost > 0)
@@ -1352,28 +1420,28 @@ export default function App() {
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 animate-in max-h-[90vh] overflow-y-auto">
         <h3 className="text-xl font-bold text-slate-800 mb-4">
             {editingActivity 
-              ? (subView === 'budget' ? '編輯支出' : '編輯行程')
-              : (subView === 'budget' ? '新增支出' : '新增行程')}
+              ? (subView === 'budget' ? t('editExpense') : t('editActivity'))
+              : (subView === 'budget' ? t('createExpense') : t('createActivity'))}
         </h3>
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-3">
              <div className="col-span-3">
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                    {subView === 'budget' ? '支出名稱' : '行程名稱'}
+                    {subView === 'budget' ? t('expenseName') : t('activityName')}
                 </label>
                 <input 
                   type="text" 
                   value={newActivity.title}
                   onChange={e => setNewActivity({...newActivity, title: e.target.value})}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-teal-500 outline-none"
-                  placeholder={subView === 'budget' ? "例如：午餐、交通費..." : "例如：參觀美術館..."}
+                  placeholder={subView === 'budget' ? t('expenseNamePlaceholder') : t('activityNamePlaceholder')}
                   autoFocus
                 />
              </div>
              
              {subView === 'itinerary' && (
                  <div className="col-span-3">
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">時間 (選填)</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('timeOptional')}</label>
                     <input 
                       type="time" 
                       value={newActivity.time}
@@ -1386,31 +1454,31 @@ export default function App() {
 
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                {subView === 'budget' ? '日期 (選填)' : '日期'}
+                {subView === 'budget' ? t('dateOptional') : t('date')}
             </label>
             <select
                 value={newActivity.dayIndex}
                 onChange={e => setNewActivity({...newActivity, dayIndex: parseInt(e.target.value)})}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-teal-500 outline-none bg-white text-sm"
             >
-                <option value={-1}>待安排（未指定日期）</option>
+                <option value={-1}>{t('unassigned')}</option>
                 {tripDays.map((date, idx) => (
                     <option key={idx} value={idx}>
-                        Day {idx + 1} - {date.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' })}
+                        Day {idx + 1} - {date.toLocaleDateString(language === 'en' ? 'en-US' : (language === 'ja' ? 'ja-JP' : 'zh-TW'), { month: 'numeric', day: 'numeric', weekday: 'short' })}
                     </option>
                 ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">類型</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('type')}</label>
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {[
-                {id: 'sightseeing', label: '觀光', icon: Camera},
-                {id: 'food', label: '美食', icon: Coffee},
-                {id: 'transport', label: '交通', icon: ArrowRight},
-                {id: 'shopping', label: '購物', icon: Briefcase},
-                {id: 'other', label: '其他', icon: HelpCircle},
+                {id: 'sightseeing', label: t('categorySightseeing'), icon: Camera},
+                {id: 'food', label: t('categoryFood'), icon: Coffee},
+                {id: 'transport', label: t('categoryTransport'), icon: ArrowRight},
+                {id: 'shopping', label: t('categoryShopping'), icon: Briefcase},
+                {id: 'other', label: t('categoryOther'), icon: HelpCircle},
               ].map(type => (
                 <button
                   key={type.id}
@@ -1428,18 +1496,18 @@ export default function App() {
           </div>
           
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">地點 (選填)</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('location')}</label>
             <input 
               type="text" 
               value={newActivity.location}
               onChange={e => setNewActivity({...newActivity, location: e.target.value})}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-teal-500 outline-none text-sm"
-              placeholder="地址或地標..."
+              placeholder={t('locationPlaceholder')}
             />
           </div>
 
           <div>
-             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">金額 (選填)</label>
+             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('amount')}</label>
              <div className="flex gap-2">
                 <div className="relative flex-1">
                    <DollarSign size={14} className="absolute left-3 top-2.5 text-slate-400" />
@@ -1472,7 +1540,7 @@ export default function App() {
           
           {currentTrip?.participants?.length > 0 && (
              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">分帳成員 (預設全員)</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">{t('splitBy')}</label>
                 <div className="flex flex-wrap gap-2">
                    {currentTrip.participants.map(p => {
                      const isSelected = newActivity.splitBy?.includes(p);
@@ -1501,12 +1569,12 @@ export default function App() {
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">備註 (選填)</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{t('notes')}</label>
             <textarea 
               value={newActivity.notes}
               onChange={e => setNewActivity({...newActivity, notes: e.target.value})}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-teal-500 outline-none text-sm h-16 resize-none"
-              placeholder="記得買門票..."
+              placeholder={t('notesPlaceholder')}
             />
           </div>
         </div>
@@ -1523,13 +1591,13 @@ export default function App() {
             onClick={() => { setIsActivityModalOpen(false); setEditingActivity(null); }}
             className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
           >
-            取消
+            {t('cancel')}
           </button>
           <button 
             onClick={editingActivity ? handleUpdateActivity : handleAddActivity}
             className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm"
           >
-            儲存
+            {t('save')}
           </button>
         </div>
       </div>
@@ -1543,9 +1611,9 @@ export default function App() {
           <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4 shadow-sm">
             <AlertTriangle size={24} />
           </div>
-          <h3 className="text-xl font-bold text-slate-800">確定要刪除行程嗎？</h3>
+          <h3 className="text-xl font-bold text-slate-800">{t('deleteTripConfirm')}?</h3>
           <p className="text-slate-500 mt-2 text-sm leading-relaxed">
-            您即將刪除「<span className="font-bold text-slate-700">{tripToDelete?.destination}</span>」。<br/>此動作無法復原，您確定要繼續嗎？
+            {t('deleteTripWarning')}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -1553,13 +1621,13 @@ export default function App() {
             onClick={() => setTripToDelete(null)}
             className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
           >
-            取消
+            {t('cancel')}
           </button>
           <button 
             onClick={confirmDeleteTrip}
             className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium shadow-sm shadow-red-200 transition-colors"
           >
-            確認刪除
+            {t('delete')}
           </button>
         </div>
       </div>
@@ -1573,9 +1641,9 @@ export default function App() {
           <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4 shadow-sm">
             <AlertTriangle size={24} />
           </div>
-          <h3 className="text-xl font-bold text-slate-800">確定要刪除此行程嗎？</h3>
+          <h3 className="text-xl font-bold text-slate-800">{t('deleteActivityConfirm')}</h3>
           <p className="text-slate-500 mt-2 text-sm leading-relaxed">
-            您即將刪除「<span className="font-bold text-slate-700">{activityToDelete?.title}</span>」。<br/>此動作無法復原。
+            <span className="font-bold text-slate-700">{activityToDelete?.title}</span>
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -1583,13 +1651,13 @@ export default function App() {
             onClick={() => setActivityToDelete(null)}
             className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
           >
-            取消
+            {t('cancel')}
           </button>
           <button 
             onClick={() => { handleDeleteActivity(activityToDelete.id); setActivityToDelete(null); }}
             className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium shadow-sm shadow-red-200 transition-colors"
           >
-            確認刪除
+            {t('delete')}
           </button>
         </div>
       </div>
@@ -1603,9 +1671,9 @@ export default function App() {
           <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4 shadow-sm">
             <AlertTriangle size={24} />
           </div>
-          <h3 className="text-xl font-bold text-slate-800">確定要刪除置頂公告嗎？</h3>
+          <h3 className="text-xl font-bold text-slate-800">{t('deleteAnnouncement')}?</h3>
           <p className="text-slate-500 mt-2 text-sm leading-relaxed">
-            此動作無法復原，您確定要繼續嗎？
+            {t('deleteTripWarning')}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -1613,13 +1681,13 @@ export default function App() {
             onClick={() => setShowAnnouncementDelete(false)}
             className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
           >
-            取消
+            {t('cancel')}
           </button>
           <button 
             onClick={confirmDeleteAnnouncement}
             className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium shadow-sm shadow-red-200 transition-colors"
           >
-            確認刪除
+            {t('delete')}
           </button>
         </div>
       </div>
@@ -1629,22 +1697,22 @@ export default function App() {
   const renderTripModal = () => (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 animate-in overflow-y-auto max-h-[90vh]">
-        <h3 className="text-xl font-bold text-slate-800 mb-4">{isEditing ? '編輯行程' : '建立新旅程'}</h3>
+        <h3 className="text-xl font-bold text-slate-800 mb-4">{isEditing ? t('editTrip') : t('createTrip')}</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">目的地</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">{t('destination')}</label>
             <input 
               type="text" 
               value={newTrip.destination}
               onChange={e => setNewTrip({...newTrip, destination: e.target.value})}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none"
-              placeholder="例如：東京, 日本"
+              placeholder={t('destinationPlaceholder')}
               autoFocus
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">開始日期</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('startDate')}</label>
               <input 
                 type="date" 
                 value={newTrip.startDate}
@@ -1653,7 +1721,7 @@ export default function App() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">結束日期</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('endDate')}</label>
               <input 
                 type="date" 
                 value={newTrip.endDate}
@@ -1664,7 +1732,7 @@ export default function App() {
           </div>
 
           <div>
-             <label className="block text-sm font-medium text-slate-700 mb-1">封面圖片 (選填)</label>
+             <label className="block text-sm font-medium text-slate-700 mb-1">{t('coverImage')}</label>
              <div className="border border-slate-300 rounded-lg p-3 bg-slate-50 text-center">
                <input 
                  type="file" 
