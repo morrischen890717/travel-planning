@@ -114,8 +114,10 @@ export default function App() {
 
   // Form States
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
+  const [showAnnouncementDelete, setShowAnnouncementDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false); 
-  const [newTrip, setNewTrip] = useState({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '' });
+  const [newTrip, setNewTrip] = useState({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '', announcement: '' });
   const [participantInput, setParticipantInput] = useState(''); 
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -189,12 +191,26 @@ export default function App() {
       startDate: currentTrip.startDate,
       endDate: currentTrip.endDate,
       participants: currentTrip.participants || [],
-      coverImage: currentTrip.coverImage || ''
+      coverImage: currentTrip.coverImage || '',
+      announcement: currentTrip.announcement || ''
     });
     setParticipantInput('');
     setFormError('');
     setIsEditing(true);
     setIsModalOpen(true);
+  };
+
+  const handleEditAnnouncement = () => {
+    setNewTrip({
+      destination: currentTrip.destination,
+      startDate: currentTrip.startDate,
+      endDate: currentTrip.endDate,
+      participants: currentTrip.participants || [],
+      coverImage: currentTrip.coverImage || '',
+      announcement: currentTrip.announcement || ''
+    });
+    setFormError('');
+    setIsAnnouncementModalOpen(true);
   };
 
   const handleSaveTrip = async () => {
@@ -239,7 +255,7 @@ export default function App() {
         setTrips([...trips, mappedTrip]);
       }
 
-      setNewTrip({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '' });
+      setNewTrip({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '', announcement: '' });
       setParticipantInput('');
       setIsModalOpen(false);
       setFormError('');
@@ -247,6 +263,57 @@ export default function App() {
     } catch (error) {
       console.error('Failed to save trip:', error);
       setFormError('儲存失敗，請重試');
+    }
+  };
+
+  const handleSaveAnnouncement = async () => {
+    try {
+      const tripData = {
+        ...newTrip,
+        participants: newTrip.participants || [],
+        coverImage: newTrip.coverImage || ''
+      };
+
+      const response = await fetch(`${API_URL}/trips/${currentTrip.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tripData)
+      });
+      const updatedTrip = await response.json();
+      const mappedTrip = { ...updatedTrip, id: updatedTrip._id };
+      
+      setTrips(trips.map(t => t.id === currentTrip.id ? mappedTrip : t));
+      setCurrentTrip(mappedTrip);
+      setIsAnnouncementModalOpen(false);
+    } catch (error) {
+      console.error('Failed to save announcement:', error);
+    }
+  };
+
+  const handleDeleteAnnouncement = () => {
+    setShowAnnouncementDelete(true);
+  };
+
+  const confirmDeleteAnnouncement = async () => {
+    try {
+      const tripData = {
+        ...currentTrip,
+        announcement: ''
+      };
+
+      const response = await fetch(`${API_URL}/trips/${currentTrip.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tripData)
+      });
+      const updatedTrip = await response.json();
+      const mappedTrip = { ...updatedTrip, id: updatedTrip._id };
+      
+      setTrips(trips.map(t => t.id === currentTrip.id ? mappedTrip : t));
+      setCurrentTrip(mappedTrip);
+      setShowAnnouncementDelete(false);
+    } catch (error) {
+      console.error('Failed to delete announcement:', error);
     }
   };
 
@@ -498,7 +565,7 @@ export default function App() {
               setIsModalOpen(true); 
               setIsEditing(false);
               setFormError(''); 
-              setNewTrip({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '' });
+              setNewTrip({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '', announcement: '' });
               setParticipantInput('');
             }}
             className="hidden sm:flex bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-xl items-center gap-2 shadow-lg shadow-teal-200/50 transition-all active:scale-95 font-medium flex-shrink-0"
@@ -513,7 +580,7 @@ export default function App() {
             setIsModalOpen(true); 
             setIsEditing(false);
             setFormError(''); 
-            setNewTrip({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '' });
+            setNewTrip({ destination: '', startDate: '', endDate: '', participants: [], coverImage: '', announcement: '' });
             setParticipantInput('');
           }}
           className="sm:hidden w-full bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-teal-200/50 transition-all active:scale-95 font-medium mb-6"
@@ -830,6 +897,33 @@ export default function App() {
 
           {/* Main Content Area */}
           <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50">
+            {/* Announcement Banner */}
+            {currentTrip.announcement && (
+              <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 mb-6 flex items-start gap-3">
+                <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+                <div className="flex-1">
+                  <h4 className="text-amber-800 font-bold text-sm mb-1">置頂公告</h4>
+                  <p className="text-amber-700 text-sm whitespace-pre-wrap">{currentTrip.announcement}</p>
+                </div>
+                <div className="flex gap-1">
+                  <button 
+                    onClick={handleEditAnnouncement}
+                    className="p-1.5 text-amber-600 hover:bg-amber-100 rounded-full transition-colors"
+                    title="編輯公告"
+                  >
+                    <Edit size={14} />
+                  </button>
+                  <button 
+                    onClick={handleDeleteAnnouncement}
+                    className="p-1.5 text-amber-600 hover:bg-red-100 hover:text-red-500 rounded-full transition-colors"
+                    title="刪除公告"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {subView === 'itinerary' ? (
               <div className="max-w-3xl mx-auto">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
@@ -1299,6 +1393,36 @@ export default function App() {
     </div>
   );
 
+  const renderAnnouncementDeleteConfirmation = () => (
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 animate-in">
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4 shadow-sm">
+            <AlertTriangle size={24} />
+          </div>
+          <h3 className="text-xl font-bold text-slate-800">確定要刪除置頂公告嗎？</h3>
+          <p className="text-slate-500 mt-2 text-sm leading-relaxed">
+            此動作無法復原，您確定要繼續嗎？
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <button 
+            onClick={() => setShowAnnouncementDelete(false)}
+            className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl font-medium transition-colors"
+          >
+            取消
+          </button>
+          <button 
+            onClick={confirmDeleteAnnouncement}
+            className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium shadow-sm shadow-red-200 transition-colors"
+          >
+            確認刪除
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderTripModal = () => (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 animate-in overflow-y-auto max-h-[90vh]">
@@ -1396,6 +1520,16 @@ export default function App() {
           </div>
 
           <div>
+             <label className="block text-sm font-medium text-slate-700 mb-1">置頂公告 (選填)</label>
+             <textarea 
+               value={newTrip.announcement}
+               onChange={e => setNewTrip({...newTrip, announcement: e.target.value})}
+               className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none text-sm h-20 resize-none"
+               placeholder="例如：記得帶護照、集合地點..."
+             />
+          </div>
+
+          <div>
              <label className="block text-sm font-medium text-slate-700 mb-1">參加者名單</label>
              <div className="flex gap-2 mb-2">
                 <input 
@@ -1459,10 +1593,46 @@ export default function App() {
     </div>
   );
 
+  const renderAnnouncementModal = () => (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 animate-in">
+        <h3 className="text-xl font-bold text-slate-800 mb-4">編輯置頂公告</h3>
+        <div className="space-y-4">
+          <div>
+             <textarea 
+               value={newTrip.announcement}
+               onChange={e => setNewTrip({...newTrip, announcement: e.target.value})}
+               className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none text-sm h-32 resize-none"
+               placeholder="請輸入公告內容..."
+               autoFocus
+             />
+          </div>
+        </div>
+        
+        <div className="mt-6 flex justify-end gap-3">
+          <button 
+            onClick={() => setIsAnnouncementModalOpen(false)}
+            className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+          >
+            取消
+          </button>
+          <button 
+            onClick={handleSaveAnnouncement}
+            className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm"
+          >
+            儲存公告
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-teal-100">
       {view === 'dashboard' ? renderDashboard() : renderTripDetail()}
       {isModalOpen && renderTripModal()}
+      {isAnnouncementModalOpen && renderAnnouncementModal()}
+      {showAnnouncementDelete && renderAnnouncementDeleteConfirmation()}
       {isActivityModalOpen && renderActivityModal()}
       {tripToDelete && renderDeleteConfirmation()}
       {activityToDelete && renderActivityDeleteConfirmation()}

@@ -21,6 +21,10 @@ const tripSchema = new mongoose.Schema({
   coverImage: {
     type: String,
     default: ''
+  },
+  announcement: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true
