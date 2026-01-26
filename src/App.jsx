@@ -535,6 +535,10 @@ export default function App() {
     return activities.reduce((sum, act) => sum + (act.cost || 0), 0);
   }, [activities]);
 
+  const itineraryCount = useMemo(() => {
+    return activities.filter(a => !a.isExpenseOnly).length;
+  }, [activities]);
+
   const costByCategory = useMemo(() => {
     const stats = { sightseeing: 0, food: 0, transport: 0, shopping: 0, other: 0 };
     activities.forEach(act => {
@@ -544,6 +548,34 @@ export default function App() {
     });
     return stats;
   }, [activities]);
+
+  const costByParticipant = useMemo(() => {
+    if (!currentTrip?.participants) return {};
+    
+    const stats = {};
+    currentTrip.participants.forEach(p => stats[p] = 0);
+
+    activities.forEach(act => {
+      const cost = act.cost || 0;
+      if (cost === 0) return;
+
+      // 只有指定分帳成員的支出才計入
+      const splitMembers = act.splitBy && act.splitBy.length > 0 
+        ? act.splitBy 
+        : null;
+
+      if (splitMembers && splitMembers.length > 0) {
+        const perPerson = cost / splitMembers.length;
+        splitMembers.forEach(member => {
+          if (stats[member] !== undefined) {
+            stats[member] += perPerson;
+          }
+        });
+      }
+    });
+
+    return stats;
+  }, [activities, currentTrip]);
 
   // --- UI Components ---
   const renderDashboard = () => (
@@ -815,11 +847,11 @@ export default function App() {
                     <div className="flex-1 min-w-0">
                        <div className="text-sm truncate font-medium">所有行程</div>
                     </div>
-                    {activities.length > 0 && (
+                    {itineraryCount > 0 && (
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                         selectedDayIndex === -2 ? 'bg-white/20' : 'bg-indigo-100 text-indigo-600'
                       }`}>
-                        {activities.length}
+                        {itineraryCount}
                       </span>
                     )}
                   </button>
@@ -841,11 +873,11 @@ export default function App() {
                     <div className="flex-1 min-w-0">
                        <div className="text-sm truncate font-medium">待安排</div>
                     </div>
-                    {activities.filter(a => a.dayIndex === -1).length > 0 && (
+                    {activities.filter(a => a.dayIndex === -1 && !a.isExpenseOnly).length > 0 && (
                       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                         selectedDayIndex === -1 ? 'bg-white/20' : 'bg-amber-100 text-amber-600'
                       }`}>
-                        {activities.filter(a => a.dayIndex === -1).length}
+                        {activities.filter(a => a.dayIndex === -1 && !a.isExpenseOnly).length}
                       </span>
                     )}
                   </button>
@@ -891,6 +923,24 @@ export default function App() {
                      </div>
                    ))}
                  </div>
+
+                 <div className="border-t border-slate-100 my-4"></div>
+                 
+                 <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">分帳概況</h3>
+                 <div className="space-y-3 px-2">
+                   {currentTrip.participants && currentTrip.participants.map(p => (
+                     <div key={p} className="flex justify-between items-center text-sm">
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <User size={14} className="text-slate-400" />
+                          {p}
+                        </div>
+                        <span className="font-medium text-slate-800">${(costByParticipant[p] || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                     </div>
+                   ))}
+                   {(!currentTrip.participants || currentTrip.participants.length === 0) && (
+                     <div className="text-xs text-slate-400 italic px-2">無參加者資料</div>
+                   )}
+                 </div>
               </div>
             )}
           </aside>
@@ -933,7 +983,7 @@ export default function App() {
                     </h2>
                     <p className="text-slate-500">
                       {selectedDayIndex === -2 
-                        ? `共 ${activities.length} 個行程` 
+                        ? `共 ${itineraryCount} 個行程` 
                         : selectedDayIndex === -1 
                           ? '尚未指定日期的行程' 
                           : currentDate?.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
