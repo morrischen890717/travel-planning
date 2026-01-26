@@ -622,6 +622,13 @@ export default function App() {
     return Array.from(currencies).sort();
   }, [activities]);
 
+  // Auto-switch currency filter if current selection is no longer available
+  useEffect(() => {
+    if (availableCurrencies.length > 0 && !availableCurrencies.includes(selectedCurrencyFilter)) {
+      setSelectedCurrencyFilter(availableCurrencies[0]);
+    }
+  }, [availableCurrencies, selectedCurrencyFilter]);
+
   const costByParticipant = useMemo(() => {
     if (!currentTrip?.participants) return {};
     
@@ -853,13 +860,6 @@ export default function App() {
                    </>
                 )}
               </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="bg-teal-50/90 backdrop-blur-md px-3 py-1.5 rounded-lg flex flex-col items-end shadow-sm">
-              <span className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">總花費</span>
-              <span className="text-sm font-bold text-teal-700">${totalCost.toLocaleString()}</span>
             </div>
           </div>
         </header>
