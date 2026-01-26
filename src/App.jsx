@@ -848,7 +848,7 @@ export default function App() {
                   onClick={() => { setSubView('budget'); setIsSidebarOpen(false); }}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors font-medium ${subView === 'budget' ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}
                >
-                 <PieChart size={18} /> 旅費支出
+                 <DollarSign size={18} /> 旅費支出
                </button>
             </div>
 
