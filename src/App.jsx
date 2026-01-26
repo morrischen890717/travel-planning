@@ -1077,24 +1077,6 @@ export default function App() {
               : (subView === 'budget' ? '新增支出' : '新增行程')}
         </h3>
         <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                {subView === 'budget' ? '日期 (選填)' : '日期'}
-            </label>
-            <select
-                value={newActivity.dayIndex}
-                onChange={e => setNewActivity({...newActivity, dayIndex: parseInt(e.target.value)})}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-teal-500 outline-none bg-white text-sm"
-            >
-                <option value={-1}>待安排（未指定日期）</option>
-                {tripDays.map((date, idx) => (
-                    <option key={idx} value={idx}>
-                        Day {idx + 1} - {date.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' })}
-                    </option>
-                ))}
-            </select>
-          </div>
-
           <div className="grid grid-cols-3 gap-3">
              <div className="col-span-3">
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
@@ -1121,6 +1103,24 @@ export default function App() {
                     />
                  </div>
              )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                {subView === 'budget' ? '日期 (選填)' : '日期'}
+            </label>
+            <select
+                value={newActivity.dayIndex}
+                onChange={e => setNewActivity({...newActivity, dayIndex: parseInt(e.target.value)})}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-teal-500 outline-none bg-white text-sm"
+            >
+                <option value={-1}>待安排（未指定日期）</option>
+                {tripDays.map((date, idx) => (
+                    <option key={idx} value={idx}>
+                        Day {idx + 1} - {date.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' })}
+                    </option>
+                ))}
+            </select>
           </div>
 
           <div>
