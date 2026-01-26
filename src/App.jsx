@@ -1013,7 +1013,11 @@ export default function App() {
                            .filter(a => a.cost > 0)
                            .sort((a, b) => b.cost - a.cost)
                            .map((act) => (
-                             <div key={act.id} className="p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                             <div 
+                               key={act.id} 
+                               onClick={() => openEditActivity(act)}
+                               className="p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors group"
+                             >
                                 <div className="flex justify-between items-start mb-2">
                                   <div className="flex items-center gap-3">
                                      <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 text-slate-500`}>
