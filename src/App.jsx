@@ -703,9 +703,7 @@ export default function App() {
         <div className="flex justify-between items-center mb-10">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 flex items-center gap-3">
-              <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <MapPin className="text-white" size={20} />
-              </div>
+              <img src="/favicon.png" alt="Logo" className="w-10 h-10 rounded-full flex-shrink-0 object-cover" />
               <span>{t('appTitle')}</span>
             </h1>
             <p className="text-slate-500 mt-2 ml-14">{t('appSubtitle')}</p>
