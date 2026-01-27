@@ -128,6 +128,49 @@ export const translations = {
     noLocationsHint: '在活動中填寫地點即可顯示於地圖',
     openInGoogleMaps: '在 Google Maps 中開啟',
     
+    // Edit Trip
+    pinnedAnnouncementLabel: '置頂公告 (選填)',
+    editPinnedAnnouncement: '編輯置頂公告',
+    pinnedAnnouncementPlaceholder: '例如：記得帶護照、集合地點...',
+    participantsLabel: '參加者名單',
+    participantInputPlaceholder: '輸入名字後按 + (例如：小明)',
+    noParticipantsAdded: '尚未新增參加者',
+    
+    // Activity Types
+    typeSightseeing: '觀光',
+    typeFood: '美食',
+    typeTransport: '交通',
+    typeShopping: '購物',
+    typeOther: '其他',
+    typeGeneral: '行程',
+
+    // UI Labels
+    labelDay: '第幾天',
+    labelUnscheduled: '未指定日期',
+    labelSplitWith: '分攤成員：',
+    labelChangeImage: '更換圖片',
+    labelRemoveImage: '移除圖片',
+    labelProcessing: '處理中...',
+    labelUploadCover: '點擊上傳封面圖片',
+    labelAutoOptimized: '(自動壓縮最佳化)',
+    placeholderAnnouncement: '請輸入公告內容...',
+    
+    // Buttons
+    btnCancel: '取消',
+    btnSaveChange: '儲存變更',
+    btnCreateTrip: '建立行程',
+    btnSaveAnnouncement: '儲存公告',
+    
+    // Errors
+    errorFillAllFields: '請填寫所有欄位',
+    errorDateOrder: '開始日期不能晚於結束日期',
+    errorSaveFailed: '儲存失敗，請重試',
+    errorImageFormat: '請上傳圖片檔案 (JPG, PNG)',
+    errorImageProcessing: '圖片處理失敗，請重試',
+    errorNameRequired: '請填寫名稱',
+    errorAddFailed: '新增失敗，請重試',
+    errorUpdateFailed: '更新失敗，請重試',
+    
     // Language
     language: '語言',
   },
@@ -259,6 +302,49 @@ export const translations = {
     noLocationsHint: '予定に場所を入力すると地図に表示されます',
     openInGoogleMaps: 'Google Maps で開く',
     
+    // Edit Trip
+    pinnedAnnouncementLabel: 'ピン留めお知らせ（任意）',
+    editPinnedAnnouncement: 'お知らせを編集',
+    pinnedAnnouncementPlaceholder: '例：パスポートを忘れずに、集合場所...',
+    participantsLabel: '参加者リスト',
+    participantInputPlaceholder: '名前を入力して + を押す (例: 田中)',
+    noParticipantsAdded: '参加者が追加されていません',
+
+    // Activity Types
+    typeSightseeing: '観光',
+    typeFood: 'グルメ',
+    typeTransport: '移動',
+    typeShopping: '買い物',
+    typeOther: 'その他',
+    typeGeneral: '旅程',
+
+    // UI Labels
+    labelDay: '日目',
+    labelUnscheduled: '日時未定',
+    labelSplitWith: '割り勘メンバー：',
+    labelChangeImage: '画像を変更',
+    labelRemoveImage: '画像を削除',
+    labelProcessing: '処理中...',
+    labelUploadCover: '表紙画像をアップロード',
+    labelAutoOptimized: '(自動最適化)',
+    placeholderAnnouncement: 'お知らせを入力...',
+    
+    // Buttons
+    btnCancel: 'キャンセル',
+    btnSaveChange: '変更を保存',
+    btnCreateTrip: '旅程を作成',
+    btnSaveAnnouncement: 'お知らせを保存',
+    
+    // Errors
+    errorFillAllFields: 'すべての項目を入力してください',
+    errorDateOrder: '開始日は終了日より前の日付にしてください',
+    errorSaveFailed: '保存に失敗しました。やり直してください',
+    errorImageFormat: '画像ファイル(JPG, PNG)をアップロードしてください',
+    errorImageProcessing: '画像の処理に失敗しました',
+    errorNameRequired: '名称を入力してください',
+    errorAddFailed: '追加に失敗しました',
+    errorUpdateFailed: '更新に失敗しました',
+    
     // Language
     language: '言語',
   },
@@ -389,6 +475,49 @@ export const translations = {
     noLocations: 'No locations set',
     noLocationsHint: 'Add location to activities to see them on map',
     openInGoogleMaps: 'Open in Google Maps',
+    
+    // Edit Trip
+    pinnedAnnouncementLabel: 'Pinned Announcement (Optional)',
+    editPinnedAnnouncement: 'Edit Pinned Announcement',
+    pinnedAnnouncementPlaceholder: 'e.g., Remember passport, meeting point...',
+    participantsLabel: 'Participants List',
+    participantInputPlaceholder: 'Enter name and press + (e.g., John)',
+    noParticipantsAdded: 'No participants added yet',
+
+    // Activity Types
+    typeSightseeing: 'Sightseeing',
+    typeFood: 'Food',
+    typeTransport: 'Transport',
+    typeShopping: 'Shopping',
+    typeOther: 'Other',
+    typeGeneral: 'Itinerary',
+
+    // UI Labels
+    labelDay: 'Day',
+    labelUnscheduled: 'Unscheduled',
+    labelSplitWith: 'Split with:',
+    labelChangeImage: 'Change image',
+    labelRemoveImage: 'Remove image',
+    labelProcessing: 'Processing...',
+    labelUploadCover: 'Click to upload cover',
+    labelAutoOptimized: '(Auto optimized)',
+    placeholderAnnouncement: 'Enter announcement...',
+    
+    // Buttons
+    btnCancel: 'Cancel',
+    btnSaveChange: 'Save Changes',
+    btnCreateTrip: 'Create Trip',
+    btnSaveAnnouncement: 'Save Announcement',
+    
+    // Errors
+    errorFillAllFields: 'Please fill in all fields',
+    errorDateOrder: 'Start date cannot be later than end date',
+    errorSaveFailed: 'Save failed, please try again',
+    errorImageFormat: 'Please upload an image file (JPG, PNG)',
+    errorImageProcessing: 'Image processing failed, please try again',
+    errorNameRequired: 'Please enter a name',
+    errorAddFailed: 'Add failed, please try again',
+    errorUpdateFailed: 'Update failed, please try again',
     
     // Language
     language: 'Language',

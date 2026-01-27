@@ -8,10 +8,13 @@ import TripMap from './components/TripMap';
 import { translations, languageOptions, initLanguage } from './i18n';
 
 // --- Utility Functions ---
-const formatDate = (dateString) => {
+const formatDate = (dateString, lang = 'zh-TW') => {
   if (!dateString) return '';
-  const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' };
-  return new Date(dateString).toLocaleDateString('zh-TW', options);
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}/${month}/${day}`;
 };
 
 const getDaysArray = (start, end) => {
@@ -96,8 +99,14 @@ const getTypeColorDot = (type) => {
 };
 
 const getTypeLabel = (type) => {
-  const map = { sightseeing: '觀光', food: '美食', transport: '交通', shopping: '購物', other: '其他' };
-  return map[type] || '行程';
+  const map = { 
+    sightseeing: t('typeSightseeing', language), 
+    food: t('typeFood', language), 
+    transport: t('typeTransport', language), 
+    shopping: t('typeShopping', language), 
+    other: t('typeOther', language) 
+  };
+  return map[type] || t('typeGeneral', language);
 };
 
 const getCurrencySymbol = (currency) => {
@@ -256,12 +265,12 @@ export default function App() {
   const handleSaveTrip = async () => {
     setFormError('');
     if (!newTrip.destination || !newTrip.startDate || !newTrip.endDate) {
-      setFormError('請填寫所有欄位');
+      setFormError(t('errorFillAllFields', language));
       return;
     }
 
     if (new Date(newTrip.startDate) > new Date(newTrip.endDate)) {
-      setFormError('開始日期不能晚於結束日期');
+      setFormError(t('errorDateOrder', language));
       return;
     }
 
@@ -330,7 +339,7 @@ export default function App() {
       setIsEditing(false);
     } catch (error) {
       console.error('Failed to save trip:', error);
-      setFormError('儲存失敗，請重試');
+      setFormError(t('errorSaveFailed', language));
     }
   };
 
@@ -394,7 +403,7 @@ export default function App() {
     }
 
     if (!file.type.startsWith('image/')) {
-      setFormError('請上傳圖片檔案 (JPG, PNG)');
+      setFormError(t('errorImageFormat', language));
       return;
     }
 
@@ -407,7 +416,7 @@ export default function App() {
       setNewTrip(prev => ({ ...prev, coverImage: base64 }));
     } catch (error) {
       console.error("Image upload failed", error);
-      setFormError('圖片處理失敗，請重試');
+      setFormError(t('errorImageProcessing', language));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -481,7 +490,7 @@ export default function App() {
   const handleAddActivity = async () => {
     setFormError('');
     if (!newActivity.title) {
-      setFormError('請填寫名稱');
+      setFormError(t('errorNameRequired', language));
       return;
     }
     
@@ -506,7 +515,7 @@ export default function App() {
       setFormError('');
     } catch (error) {
       console.error('Failed to add activity:', error);
-      setFormError('新增失敗，請重試');
+      setFormError(t('errorAddFailed', language));
     }
   };
 
@@ -540,7 +549,7 @@ export default function App() {
   const handleUpdateActivity = async () => {
     setFormError('');
     if (!newActivity.title) {
-      setFormError('請填寫名稱');
+      setFormError(t('errorNameRequired', language));
       return;
     }
 
@@ -560,7 +569,7 @@ export default function App() {
       setFormError('');
     } catch (error) {
       console.error('Failed to update activity:', error);
-      setFormError('更新失敗，請重試');
+      setFormError(t('errorUpdateFailed', language));
     }
   };
 
@@ -813,7 +822,7 @@ export default function App() {
                     <div className="flex items-center gap-2 text-slate-600 mb-3">
                       <Calendar size={16} className="text-slate-400" />
                       <span className="text-sm">
-                        {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+                        {formatDate(trip.startDate, language)} - {formatDate(trip.endDate, language)}
                       </span>
                     </div>
 
@@ -897,7 +906,7 @@ export default function App() {
                  </button>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500">
-                <span>{formatDate(currentTrip.startDate)} - {formatDate(currentTrip.endDate)}</span>
+                <span>{formatDate(currentTrip.startDate, language)} - {formatDate(currentTrip.endDate, language)}</span>
                 {currentTrip.participants?.length > 0 && (
                    <>
                     <span>•</span>
@@ -973,7 +982,7 @@ export default function App() {
 
             {subView === 'itinerary' && (
               <div className="flex-1 overflow-y-auto p-4">
-                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">第幾天</h3>
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">{t('labelDay', language)}</h3>
                 <div className="space-y-1">
                   {/* All activities button */}
                   <button
@@ -1325,11 +1334,11 @@ export default function App() {
                     </div>
                     <div className="space-y-4">
                        {[
-                         {id: 'sightseeing', label: '觀光', color: 'bg-blue-500'},
-                         {id: 'food', label: '美食', color: 'bg-orange-500'},
-                         {id: 'transport', label: '交通', color: 'bg-slate-500'},
-                         {id: 'shopping', label: '購物', color: 'bg-pink-500'},
-                         {id: 'other', label: '其他', color: 'bg-emerald-500'},
+                         {id: 'sightseeing', label: t('typeSightseeing', language), color: 'bg-blue-500'},
+                         {id: 'food', label: t('typeFood', language), color: 'bg-orange-500'},
+                         {id: 'transport', label: t('typeTransport', language), color: 'bg-slate-500'},
+                         {id: 'shopping', label: t('typeShopping', language), color: 'bg-pink-500'},
+                         {id: 'other', label: t('typeOther', language), color: 'bg-emerald-500'},
                        ].map(type => {
                           const cost = costByCategory[selectedCurrencyFilter]?.[type.id] || 0;
                           const currencyTotal = Object.values(costByCategory[selectedCurrencyFilter] || {}).reduce((a, b) => a + b, 0);
@@ -1377,7 +1386,7 @@ export default function App() {
                                      <div>
                                         <p className="font-bold text-slate-800">{act.title}</p>
                                         <p className="text-xs text-slate-500">
-                                            {act.dayIndex !== -1 ? `Day ${act.dayIndex + 1}` : '未指定日期'}
+                                            {act.dayIndex !== -1 ? `${t('labelDay', language)} ${act.dayIndex + 1}` : t('labelUnscheduled', language)}
                                             {act.time ? ` • ${act.time}` : ''}
                                         </p>
                                      </div>
@@ -1390,7 +1399,7 @@ export default function App() {
                                   <div className="ml-14 bg-slate-50 rounded-lg p-2 text-xs text-slate-600 flex items-start gap-2">
                                      <Users size={14} className="mt-0.5 text-slate-400" />
                                      <div>
-                                        <span className="font-semibold text-slate-500">分攤成員：</span>
+                                        <span className="font-semibold text-slate-500">{t('labelSplitWith', language)}</span>
                                         {act.splitBy.join(', ')}
                                      </div>
                                   </div>
@@ -1753,14 +1762,14 @@ export default function App() {
                        <button 
                          onClick={() => fileInputRef.current?.click()}
                          className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm"
-                         title="更換圖片"
+                         title={t('labelChangeImage', language)}
                        >
                           <Edit size={16} />
                        </button>
                        <button 
                          onClick={() => setNewTrip({...newTrip, coverImage: ''})}
                          className="p-2 bg-white/20 hover:bg-red-500 text-white rounded-full backdrop-blur-sm"
-                         title="移除圖片"
+                         title={t('labelRemoveImage', language)}
                        >
                           <Trash2 size={16} />
                        </button>
@@ -1776,13 +1785,13 @@ export default function App() {
                    {isUploading ? (
                      <div className="flex flex-col items-center">
                         <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                        <span className="text-xs">處理中...</span>
+                        <span className="text-xs">{t('labelProcessing', language)}</span>
                      </div>
                    ) : (
                      <>
                         <Upload size={24} className="mb-2" />
-                        <span className="text-sm">點擊上傳封面圖片</span>
-                        <span className="text-[10px] mt-1 text-slate-400">(自動壓縮最佳化)</span>
+                        <span className="text-sm">{t('labelUploadCover', language)}</span>
+                        <span className="text-[10px] mt-1 text-slate-400">{t('labelAutoOptimized', language)}</span>
                      </>
                    )}
                  </button>
@@ -1791,17 +1800,17 @@ export default function App() {
           </div>
 
           <div>
-             <label className="block text-sm font-medium text-slate-700 mb-1">置頂公告 (選填)</label>
+             <label className="block text-sm font-medium text-slate-700 mb-1">{t('pinnedAnnouncementLabel')}</label>
              <textarea 
                value={newTrip.announcement}
                onChange={e => setNewTrip({...newTrip, announcement: e.target.value})}
                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none text-sm h-20 resize-none"
-               placeholder="例如：記得帶護照、集合地點..."
+               placeholder={t('pinnedAnnouncementPlaceholder', language)}
              />
           </div>
 
           <div>
-             <label className="block text-sm font-medium text-slate-700 mb-1">參加者名單</label>
+             <label className="block text-sm font-medium text-slate-700 mb-1">{t('participantsLabel')}</label>
              <div className="flex gap-2 mb-2">
                 <input 
                   type="text" 
@@ -1814,7 +1823,7 @@ export default function App() {
                     }
                   }}
                   className="flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none text-sm"
-                  placeholder="輸入名字後按 + (例如：小明)"
+                  placeholder={t('participantInputPlaceholder', language)}
                 />
                 <button 
                   onClick={handleAddParticipant}
@@ -1833,7 +1842,7 @@ export default function App() {
                    </span>
                 ))}
                 {(!newTrip.participants || newTrip.participants.length === 0) && (
-                   <span className="text-xs text-slate-400 italic">尚未新增參加者</span>
+                   <span className="text-xs text-slate-400 italic">{t('noParticipantsAdded', language)}</span>
                 )}
              </div>
           </div>
@@ -1851,13 +1860,13 @@ export default function App() {
             onClick={() => setIsModalOpen(false)}
             className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
           >
-            取消
+            {t('btnCancel', language)}
           </button>
           <button 
             onClick={handleSaveTrip}
             className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm"
           >
-            {isEditing ? '儲存變更' : '建立行程'}
+            {isEditing ? t('btnSaveChange', language) : t('btnCreateTrip', language)}
           </button>
         </div>
       </div>
@@ -1867,14 +1876,14 @@ export default function App() {
   const renderAnnouncementModal = () => (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 animate-in">
-        <h3 className="text-xl font-bold text-slate-800 mb-4">編輯置頂公告</h3>
+        <h3 className="text-xl font-bold text-slate-800 mb-4">{t('editPinnedAnnouncement')}</h3>
         <div className="space-y-4">
           <div>
              <textarea 
                value={newTrip.announcement}
                onChange={e => setNewTrip({...newTrip, announcement: e.target.value})}
                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none text-sm h-32 resize-none"
-               placeholder="請輸入公告內容..."
+               placeholder={t('placeholderAnnouncement', language)}
                autoFocus
              />
           </div>
@@ -1885,13 +1894,13 @@ export default function App() {
             onClick={() => setIsAnnouncementModalOpen(false)}
             className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
           >
-            取消
+            {t('btnCancel', language)}
           </button>
           <button 
             onClick={handleSaveAnnouncement}
             className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm"
           >
-            儲存公告
+            {t('btnSaveAnnouncement', language)}
           </button>
         </div>
       </div>
