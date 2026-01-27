@@ -525,7 +525,7 @@ export const translations = {
 };
 
 // Current language state
-let currentLanguage = 'zh-TW';
+let currentLanguage = 'ja';
 
 // Get translation function
 export const t = (key, lang) => {

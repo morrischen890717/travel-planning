@@ -8,7 +8,7 @@ import TripMap from './components/TripMap';
 import { translations, languageOptions, initLanguage } from './i18n';
 
 // --- Utility Functions ---
-const formatDate = (dateString, lang = 'zh-TW') => {
+const formatDate = (dateString, lang = 'ja') => {
   if (!dateString) return '';
   const date = new Date(dateString);
   const year = date.getFullYear();
