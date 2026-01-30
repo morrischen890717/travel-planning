@@ -825,14 +825,15 @@ export default function App() {
                     </div>
 
                     {/* Participants */}
-                    {trip.participants && trip.participants.length > 0 && (
-                      <div className="flex items-center gap-2 text-slate-500 mb-3">
-                        <Users size={16} className="text-slate-400" />
-                        <span className="text-sm truncate">
-                          {trip.participants.join(', ')}
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 text-slate-500 mb-3">
+                      <Users size={16} className="text-slate-400" />
+                      <span className="text-sm truncate">
+                        {trip.participants && trip.participants.length > 0 
+                          ? trip.participants.join(', ')
+                          : <span className="text-slate-300 italic">{t('noParticipants')}</span>
+                        }
+                      </span>
+                    </div>
 
                     {/* Footer */}
                     <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-100">
